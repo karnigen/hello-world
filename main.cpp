@@ -1,7 +1,7 @@
+#include <fmt/format.h>
 
 int main() {
-    // This is a simple C++ program that prints "Hello, World!" to the console.
-    std::cout << "Hello, World!" << std::endl;
+    fmt::print("Hello, {}!\n", "world");
     return 0;
 }
 
