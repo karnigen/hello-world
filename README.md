@@ -1,4 +1,5 @@
 hello-world
 ==============
 
-Enhanced c++ code
+Enhanced c++ code.
+Added some more comments
