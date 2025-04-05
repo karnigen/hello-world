@@ -13,6 +13,5 @@ Fruits:
 - Watermelon
 - Pineapple
 - Mango
-
-<!-- - Blueberry
-- Raspberry -->
+- Blueberry
+<!-- - Raspberry -->
