@@ -1,9 +1,7 @@
-#include <fmt/format.h>
+#include <cstdio>
 
-
-int main(id_t argc, char* argv[]) {
-    fmt::print("New Hello, world\n");
-    fmt::print("This is main.cpp\n");
+int main(int argc, char* argv[]) {
+    printf("Hello, World!\n");
     return 0;
 }
 
