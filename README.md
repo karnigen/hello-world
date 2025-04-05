@@ -20,9 +20,9 @@ Cars:
  - Hatchback
  - SUV (Sport Utility Vehicle)
  - Truck (Pickup truck)
- <!-- - Van
+ - Van
  - Convertible
  - Coupe
  - Wagon (Estate)
  - Minivan
- - Crossover -->
+ - Crossover
