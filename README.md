@@ -4,8 +4,6 @@ hello-world
 Enhanced c++ code.
 
 Fruits:
-
-
 - Apple
 - Banana
 - Orange
@@ -16,3 +14,15 @@ Fruits:
 - Mango
 - Blueberry
 - Raspberry
+
+Cars:
+ - Sedan
+ - Hatchback
+ - SUV (Sport Utility Vehicle)
+ - Truck (Pickup truck)
+ - Van
+ - Convertible
+ - Coupe
+ - Wagon (Estate)
+ - Minivan
+ - Crossover
