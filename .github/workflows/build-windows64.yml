@@ -28,7 +28,9 @@ jobs:
       - name: Find all exe in C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild
         shell: cmd
         run: |
-          dir "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild"\*.exe /s /b
+
+          :: dir "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild"\*.exe /s /b
+          dir "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC"\*.exe /s /b
 
 
       # - name: print dir of C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin
