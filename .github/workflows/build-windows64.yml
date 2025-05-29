@@ -17,8 +17,14 @@ jobs:
         uses: microsoft/setup-msbuild@v2
         with:
           vs-version: 'latest' # Specify the version of Visual Studio to use or "latest" for the latest version
-          vswhere-path: 'c:\msvc'
+          # vswhere-path: 'c:\msvc'
           # 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin' # Path to MSBuild
+
+      - name: Print environment (PowerShell)
+        shell: pwsh
+        run: |
+
+          Get-ChildItem Env: # nebo jen 'dir env:'
 
       - name: Compile main.cpp
         shell: cmd # smd or pwsh
