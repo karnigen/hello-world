@@ -28,7 +28,23 @@ jobs:
 
           git config --system core.longpaths true
 
-          cl main.cpp /Fe:main.exe
+          echo "Finding Visual Studio installation path..."
+          VS_INSTALL_PATH=$(/c/"Program Files (x86)"/"Microsoft Visual Studio"/Installer/vswhere.exe -latest -products * -property installationPath | sed 's|\\|/|g')
+
+          if [ -z "$VS_INSTALL_PATH" ]; then
+            echo "Error: Visual Studio installation path not found."
+            exit 1
+          fi
+
+          # set up whole path to vcvarsall.bat
+          VCVARSALL_PATH="${VS_INSTALL_PATH}/VC/Auxiliary/Build/vcvarsall.bat"
+
+          echo "Found Visual Studio at: $VS_INSTALL_PATH"
+          echo "Using vcvarsall.bat from: $VCVARSALL_PATH"
+
+          echo "Calling vcvarsall.bat and then cl.exe via cmd.exe..."
+          cmd.exe /c "$VCVARSALL_PATH x64 && cl main.cpp /Fe:main.exe"
+
 
       # - name: Compile main.cpp
       #   run: |
