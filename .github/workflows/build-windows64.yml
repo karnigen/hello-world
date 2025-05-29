@@ -13,33 +13,48 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+
       - name: Install msbuild # https://github.com/microsoft/setup-msbuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Compile main.cpp
+      - name: Setup Git for Windows SDK # https://github.com/git-for-windows/setup-git-for-windows-sdk
+        uses: git-for-windows/setup-git-for-windows-sdk@v1
+        with:
+          flavor: build-installers
+
+      - name: Setup environment
+        shell: bash
         run: |
-          CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
-          WHERE cl.exe
-          cl main.cpp /Fe:main.exe   # Fe - name of output file
-        shell: cmd # smd or pwsh
 
-      - name: Check if compilation was successful
-        run: |
-          IF NOT EXIST main.exe (
-            ECHO Compilation failed!
-            EXIT /B 1
-          ) ELSE (
-            ECHO Compilation succeeded!
-          )
-        shell: cmd
+          git config --system core.longpaths true
 
-      - name: List files in current directory
-        run: dir
-        shell: cmd
+          cl main.cpp /Fe:main.exe
 
-      - name: List files in current directory (PowerShell)
-        run: Get-ChildItem
-        shell: pwsh
+      # - name: Compile main.cpp
+      #   run: |
+      #     CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
+      #     WHERE cl.exe
+      #     # Fe - name of output file
+      #     cl main.cpp /Fe:main.exe
+      #   shell: cmd # smd or pwsh
+
+      # - name: Check if compilation was successful
+      #   run: |
+      #     IF NOT EXIST main.exe (
+      #       ECHO Compilation failed!
+      #       EXIT /B 1
+      #     ) ELSE (
+      #       ECHO Compilation succeeded!
+      #     )
+      #   shell: cmd
+
+      # - name: List files in current directory
+      #   run: dir
+      #   shell: cmd
+
+      # - name: List files in current directory (PowerShell)
+      #   run: Get-ChildItem
+      #   shell: pwsh
 
       - name: Upload executable as artifact
         uses: actions/upload-artifact@v4
