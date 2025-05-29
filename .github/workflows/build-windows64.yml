@@ -1,0 +1,29 @@
+# .github/workflows/build.yml
+name: Build Windows64
+
+on:
+  push:
+    tags: [build:*]
+    # branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Compile main.cpp
+        run: |
+          cl main.cpp /Fe:main.exe   # Fe - name of output file
+        shell: cmd
+
+      - name: Upload executable as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: compiled-exe
+          path: main.exe
+
+
