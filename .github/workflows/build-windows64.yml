@@ -25,10 +25,17 @@ jobs:
         run: |
           echo %PATH%
 
-      - name: print dir of C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin
+      - name: Find all exe in C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild
         shell: cmd
         run: |
-          dir "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin"
+          dir "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild"\*.exe /s /b
+
+
+      # - name: print dir of C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin
+      #   shell: cmd
+      #   run: |
+      #     dir "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin"
+
 
       - name: Print environment (PowerShell)
         shell: pwsh
