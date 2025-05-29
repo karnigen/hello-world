@@ -13,40 +13,117 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-
       - name: Install msbuild # https://github.com/microsoft/setup-msbuild
         uses: microsoft/setup-msbuild@v2
         with:
           vs-version: 'latest' # Specify the version of Visual Studio to use or "latest" for the latest version
 
       - name: Compile main.cpp
+        shell: cmd # smd or pwsh
         run: |
           CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
           WHERE cl.exe
           :: Fe - name of output file
           cl main.cpp /Fe:main.exe
-        shell: cmd # smd or pwsh
 
-      # - name: Check if compilation was successful
-      #   run: |
-      #     IF NOT EXIST main.exe (
-      #       ECHO Compilation failed!
-      #       EXIT /B 1
-      #     ) ELSE (
-      #       ECHO Compilation succeeded!
-      #     )
-      #   shell: cmd
 
       - name: List files in current directory
         run: dir
         shell: cmd
 
-      # - name: List files in current directory (PowerShell)
-      #   run: Get-ChildItem
-      #   shell: pwsh
-
-      - name: Upload executable as artifact
+      - name: Upload unsigned executable as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: compiled-exe
+          name: compiled-unsigned   # auto zip file
+          path: main.exe
+
+
+      - name: Generate Self-Signed Certificate and Sign
+        id: generate-sign-verify
+        shell: pwsh # Explicitly specify PowerShell
+
+        run: |
+
+          $certName = "MyTestSigningCert-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+          # Generate a random, secure password for the PFX file
+          $pfxPassword = ConvertTo-SecureString -String (New-Guid).ToString() -AsPlainText -Force
+          $pfxPath = "$($env:TEMP)\$($certName).pfx"
+          $fileToSign = "main.exe"
+
+          Write-Host "Generating self-signed certificate: $certName"
+          # 1. Generate the self-signed certificate
+          # -CertStoreLocation Cert:\CurrentUser\My : Stores the certificate in the current user's certificate store
+          # -Type CodeSigning : Specifies the certificate's purpose as code signing
+          # -Subject "CN=$certName" : Sets the common name of the certificate
+          # -KeyAlgorithm RSA -KeyLength 2048 : Sets key parameters
+          # -NotAfter (Get-Date).AddDays(7) : Certificate valid for 7 days (sufficient for testing)
+          # -KeyUsage DigitalSignature : Key usage for digital signatures
+          # -HashAlgorithm SHA256 : Hashing algorithm for the signature
+          $cert = New-SelfSignedCertificate `
+              -CertStoreLocation Cert:\CurrentUser\My `
+              -Type CodeSigning `
+              -Subject "CN=$certName" `
+              -KeyAlgorithm RSA `
+              -KeyLength 2048 `
+              -NotAfter (Get-Date).AddDays(7) `
+              -KeyUsage DigitalSignature `
+              -HashAlgorithm SHA256
+
+          Write-Host "Certificate generated with thumbprint: $($cert.Thumbprint)"
+
+          # 2. Export the certificate with its private key to a PFX file
+          # -FilePath $pfxPath : Path for the PFX file
+          # -Password $pfxPassword : Password for the PFX file
+          Export-PfxCertificate `
+              -Cert $cert `
+              -FilePath $pfxPath `
+              -Password $pfxPassword
+
+          Write-Host "PFX file exported to: $pfxPath"
+
+          # 3. Sign the file using SignTool.exe
+          # SignTool.exe is part of the Windows SDK, pre-installed on Windows runners
+          # /f $pfxPath : Path to the PFX file
+          # /p $pfxPassword.ToString() : Password for the PFX file
+          # /fd sha256 : File digest algorithm
+          # /td sha256 : Timestamp digest algorithm
+          # /tr http://timestamp.digicert.com : Timestamp server URL (crucial for signature validity after certificate expiration)
+          signtool.exe sign `
+              /f "$pfxPath" `
+              /p "$($pfxPassword.ToString())" `
+              /fd sha256 `
+              /td sha256 `
+              /tr http://timestamp.digicert.com `
+              "$fileToSign"
+
+          if ($LastExitCode -ne 0) {
+              Write-Error "SignTool failed with exit code $LastExitCode"
+              exit $LastExitCode
+          }
+          Write-Host "File '$fileToSign' signed successfully."
+
+          # 4. (Optional) Verify the signature
+          Write-Host "Verifying signature..."
+          signtool.exe verify /pa "$fileToSign"
+          if ($LastExitCode -ne 0) {
+              Write-Error "Signature verification failed with exit code $LastExitCode"
+              exit $LastExitCode
+          }
+          Write-Host "Signature verified successfully."
+
+          # 5. Cleanup: Remove the certificate from the store and delete the PFX file
+          Write-Host "Cleaning up generated certificate and PFX file..."
+          Remove-Item $pfxPath -Force
+          Remove-Item "Cert:\CurrentUser\My\$($cert.Thumbprint)" -DeleteKey -Force
+
+
+      - name: Verify that the signed file exists (optional)
+        shell: pwsh
+        run: |
+          Get-Item main.exe
+
+      - name: Upload signed executable as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-signed   # auto zip file
           path: main.exe
