@@ -3,7 +3,7 @@ name: Build Windows64
 
 on:
   push:
-    tags: [build:*]
+    tags: [build*]
     # branches: [ main ]
   workflow_dispatch:
 
