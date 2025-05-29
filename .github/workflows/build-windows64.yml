@@ -17,42 +17,25 @@ jobs:
       - name: Install msbuild # https://github.com/microsoft/setup-msbuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Setup Git for Windows SDK # https://github.com/git-for-windows/setup-git-for-windows-sdk
-        uses: git-for-windows/setup-git-for-windows-sdk@v1
-        with:
-          flavor: build-installers
+      # - name: Setup Git for Windows SDK # https://github.com/git-for-windows/setup-git-for-windows-sdk
+      #   uses: git-for-windows/setup-git-for-windows-sdk@v1
+      #   with:
+      #     flavor: build-installers
 
-      - name: Setup environment
-        shell: bash
-        run: |
-
-          git config --system core.longpaths true
-
-          echo "Finding Visual Studio installation path..."
-          VS_INSTALL_PATH=$(/c/"Program Files (x86)"/"Microsoft Visual Studio"/Installer/vswhere.exe -latest -products * -property installationPath | sed 's|\\|/|g')
-
-          if [ -z "$VS_INSTALL_PATH" ]; then
-            echo "Error: Visual Studio installation path not found."
-            exit 1
-          fi
-
-          # set up whole path to vcvarsall.bat
-          VCVARSALL_PATH="${VS_INSTALL_PATH}/VC/Auxiliary/Build/vcvarsall.bat"
-
-          echo "Found Visual Studio at: $VS_INSTALL_PATH"
-          echo "Using vcvarsall.bat from: $VCVARSALL_PATH"
-
-          echo "Calling vcvarsall.bat and then cl.exe via cmd.exe..."
-          cmd.exe /c "$VCVARSALL_PATH x64 && cl main.cpp /Fe:main.exe"
-
-
-      # - name: Compile main.cpp
+      # - name: Setup environment
+      #   shell: bash
       #   run: |
-      #     CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
-      #     WHERE cl.exe
-      #     # Fe - name of output file
-      #     cl main.cpp /Fe:main.exe
-      #   shell: cmd # smd or pwsh
+
+      #     git config --system core.longpaths true
+
+
+      - name: Compile main.cpp
+        run: |
+          CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
+          WHERE cl.exe
+          # Fe - name of output file
+          cl main.cpp /Fe:main.exe
+        shell: cmd # smd or pwsh
 
       # - name: Check if compilation was successful
       #   run: |
