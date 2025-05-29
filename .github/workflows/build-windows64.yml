@@ -16,18 +16,8 @@ jobs:
 
       - name: Install msbuild # https://github.com/microsoft/setup-msbuild
         uses: microsoft/setup-msbuild@v2
-
-      # - name: Setup Git for Windows SDK # https://github.com/git-for-windows/setup-git-for-windows-sdk
-      #   uses: git-for-windows/setup-git-for-windows-sdk@v1
-      #   with:
-      #     flavor: build-installers
-
-      # - name: Setup environment
-      #   shell: bash
-      #   run: |
-
-      #     git config --system core.longpaths true
-
+        with:
+          vs-version: '2022' # Specify the version of Visual Studio to use or "latest" for the latest version
 
       - name: Compile main.cpp
         run: |
@@ -47,9 +37,9 @@ jobs:
       #     )
       #   shell: cmd
 
-      # - name: List files in current directory
-      #   run: dir
-      #   shell: cmd
+      - name: List files in current directory
+        run: dir
+        shell: cmd
 
       # - name: List files in current directory (PowerShell)
       #   run: Get-ChildItem
