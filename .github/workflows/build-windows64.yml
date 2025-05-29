@@ -20,6 +20,12 @@ jobs:
           # vswhere-path: 'c:\msvc'
           # 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin' # Path to MSBuild
 
+      - name: Print full PATH (cmd)
+        shell: cmd
+        run: |
+          echo %PATH%
+
+
       - name: Print environment (PowerShell)
         shell: pwsh
         run: |
