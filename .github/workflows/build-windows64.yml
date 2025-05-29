@@ -1,10 +1,8 @@
-# .github/workflows/build.yml
 name: Build Windows64
 
 on:
   push:
     tags: [build*]
-    # branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -15,15 +13,16 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Install msbuild # https://github.com/microsoft/setup-msbuild
+        uses: microsoft/setup-msbuild@v2
+
       - name: Compile main.cpp
         run: |
           cl main.cpp /Fe:main.exe   # Fe - name of output file
-        shell: cmd
+        shell: cmd # Použijeme 'cmd' shell, což je pro Windows často nejlepší pro MSVC příkazy
 
       - name: Upload executable as artifact
         uses: actions/upload-artifact@v4
         with:
           name: compiled-exe
           path: main.exe
-
-
