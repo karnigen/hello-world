@@ -18,6 +18,8 @@ jobs:
 
       - name: Compile main.cpp
         run: |
+
+          WHERE cl.exe
           cl main.cpp /Fe:main.exe   # Fe - name of output file
         shell: cmd # Použijeme 'cmd' shell, což je pro Windows často nejlepší pro MSVC příkazy
 
