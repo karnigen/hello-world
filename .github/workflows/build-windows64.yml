@@ -21,15 +21,30 @@ jobs:
       - name: Compile main.cpp
         shell: cmd # smd or pwsh
         run: |
+          :: Set up the environment for Visual Studio
           CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
           WHERE cl.exe
           :: Fe - name of output file
           cl main.cpp /Fe:main.exe
 
+      - name: Verify that the compiled file exists using pwsh
+        shell: pwsh
+        run: |
+
+          # Set up the environment for Visual Studio
+          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
+
+          if (Test-Path main.exe) {
+              Write-Host "Compiled file exists."
+          } else {
+              Write-Error "Compiled file does not exist."
+              exit 1
+          }
+
 
       - name: List files in current directory
-        run: dir
         shell: cmd
+        run: dir
 
       - name: Upload unsigned executable as artifact
         uses: actions/upload-artifact@v4
@@ -43,6 +58,9 @@ jobs:
         shell: pwsh # Explicitly specify PowerShell
 
         run: |
+
+          # Ensure the SignTool.exe is available in the PATH
+          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
 
           $certName = "MyTestSigningCert-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
           # Generate a random, secure password for the PFX file
