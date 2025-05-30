@@ -210,10 +210,10 @@ jobs:
           try {
               Set-AuthenticodeSignature `
                   -FilePath "$fileToSign" `
-                  -Certificate $cert ` # Use the certificate object we just generated
+                  -Certificate $cert  # Use the certificate object we just generated
                   # -HashAlgorithm SHA256 ` # File digest algorithm
                   # -TimestampServer "$timestampServer" ` # Timestamp server URL
-                  -ErrorAction Stop # Important: Stops the script on any signing error
+                  # -ErrorAction Stop # Important: Stops the script on any signing error
 
               Write-Host "File '$fileToSign' signed successfully using Set-AuthenticodeSignature."
           }
