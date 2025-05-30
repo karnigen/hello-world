@@ -172,7 +172,7 @@ jobs:
           # This is necessary for the system to trust the self-signed certificate for verification.
           try {
               # $cert | Import-Certificate -CertStoreLocation Cert:\LocalMachine\Root -ErrorAction Stop
-              Import-Certificate -Certificate $cert -CertStoreLocation Cert:\LocalMachine\Root -ErrorAction Stop
+              Import-Certificate -Filepath $cert -CertStoreLocation Cert:\LocalMachine\Root
               Write-Host "Certificate imported to LocalMachine\Root store."
           }
           catch {
