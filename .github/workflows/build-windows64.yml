@@ -36,7 +36,7 @@ jobs:
 
           echo "---------------------------- 0"
           # VS_INSTALL_PATH=$( cmd.exe /c "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -products * -property installationPath" | sed 's|\\|/|g' )
-          VS_INSTALL_PATH_BASH=$( cmd.exe /c "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -products * -property installationPath" )
+          VS_INSTALL_PATH_BASH=$( cmd.exe /c /Q "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -products * -property installationPath" )
           echo "VS_INSTALL_PATH_BASH: $VS_INSTALL_PATH_BASH"
 
           # echo "-------------------------- 1"
