@@ -123,7 +123,7 @@ jobs:
           # Important: Set up the MSVC environment.
           # This step is still necessary if other steps (outside this one) use MSVC tools (e.g., cl.exe).
           # Ensure VC_VARS_PATH is correctly set from a previous step via GITHUB_ENV.
-          & "${{ env.VC_VARS_PATH }}" x64
+          # & "${{ env.VC_VARS_PATH }}" x64
 
           # --- Variable Setup ---
           $certName = "MyTestSigningCert-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
