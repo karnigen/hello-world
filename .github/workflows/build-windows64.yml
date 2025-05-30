@@ -92,18 +92,6 @@ jobs:
         run: |
           echo %PATH%
 
-      - name: run clrver bash
-        # check if clrver.exe is available on the PATH, then all should be fine
-        shell: bash
-        run: |
-
-          # Set up the environment for Visual Studio
-          cmd.exe /c /Q "${{ env.VC_VARS_PATH }}" x64
-
-          # clrver.exe is part of the .NET SDK, which is pre-installed on Windows runners
-          clrver
-          # signtool.exe is part of the Windows SDK, which is pre-installed on Windows runners
-          # signtool /v
 
       - name: run clrver
         # check if clrver.exe is available on the PATH, then all should be fine
@@ -114,7 +102,7 @@ jobs:
           :: clrver.exe is part of the .NET SDK, which is pre-installed on Windows runners
           clrver
           :: signtool.exe is part of the Windows SDK, which is pre-installed on Windows runners
-          :: signtool /v
+          signtool /v
 
 
       - name: Print environment (PowerShell)
