@@ -118,11 +118,17 @@ jobs:
       #     # signtool.exe is part of the Windows SDK, which is pre-installed on Windows runners
       #     signtool.exe /v
 
-      - name: Print environment (cmd)
-        shell: cmd
+      # - name: Print environment (cmd)
+      #   shell: cmd
+      #   run: set
+
+      - name: Print environment (PowerShell)
+        shell: pwsh
         run: |
 
-          set
+          $PSVersionTable | Format-List
+          Get-ChildItem Env: | Sort-Object Name | Format-Table -AutoSize
+
 
       - name: Compile main.cpp
         shell: cmd # smd or pwsh
