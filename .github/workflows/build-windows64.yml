@@ -35,11 +35,13 @@ jobs:
         run: |
 
           echo "-------------------------- 1"
-          $(/c/"Program Files (x86)"/"Microsoft Visual Studio"/Installer/vswhere.exe)
+          $("/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe")
+
           # -latest -products * -property installationPath)
           # | sed 's|\\|/|g')
           echo "-------------------------- 2"
-          VS_INSTALL_PATH=$(/c/"Program Files (x86)"/"Microsoft Visual Studio"/Installer/vswhere.exe -latest -products * -property installationPath | sed 's|\\|/|g')
+          VS_INSTALL_PATH=$( "/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products * -property installationPath | sed 's|\\|/|g' )
+          # VS_INSTALL_PATH=$(/c/"Program Files (x86)"/"Microsoft Visual Studio"/Installer/vswhere.exe -latest -products * -property installationPath | sed 's|\\|/|g')
           echo "-------------------------- 3"
           echo "VS_INSTALL_PATH: $VS_INSTALL_PATH"
           exit 1
