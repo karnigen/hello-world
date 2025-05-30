@@ -48,8 +48,8 @@ jobs:
           Write-Host "Found vcvarsall.bat at: $vcvarsallPath"
 
           # You can save this path as an environment variable for subsequent steps
+          # echo "VS_INSTALL_PATH=$vsInstallPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
           echo "VC_VARS_PATH=$vcvarsallPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
-          echo "VS_INSTALL_PATH=$vsInstallPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
       - name: Print full PATH (cmd)
         shell: cmd
