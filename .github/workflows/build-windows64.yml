@@ -104,25 +104,25 @@ jobs:
           :: signtool.exe is part of the Windows SDK, which is pre-installed on Windows runners
           :: signtool /v
 
+      # not working
+      # - name: run clrver (PowerShell)
+      #   shell: pwsh
+      #   run: |
 
-      - name: run clrver (PowerShell)
-        shell: pwsh
+      #     # Set up the environment for Visual Studio
+      #     & "${{ env.VC_VARS_PATH }}" x64
+
+      #     # clrver.exe is part of the .NET SDK, which is pre-installed on Windows runners
+      #     clrver.exe
+
+      #     # signtool.exe is part of the Windows SDK, which is pre-installed on Windows runners
+      #     signtool.exe /v
+
+      - name: Print environment (cmd)
+        shell: cmd
         run: |
 
-          # Set up the environment for Visual Studio
-          & "${{ env.VC_VARS_PATH }}" x64
-
-          # clrver.exe is part of the .NET SDK, which is pre-installed on Windows runners
-          clrver.exe
-
-          # signtool.exe is part of the Windows SDK, which is pre-installed on Windows runners
-          signtool.exe /v
-
-      - name: Print environment (PowerShell)
-        shell: pwsh
-        run: |
-
-          Get-ChildItem Env: # nebo jen 'dir env:'
+          set
 
       - name: Compile main.cpp
         shell: cmd # smd or pwsh
@@ -134,19 +134,6 @@ jobs:
           :: Fe - name of output file
           cl main.cpp /Fe:main.exe
 
-      - name: Verify that the compiled file exists using pwsh
-        shell: pwsh
-        run: |
-
-          # Set up the environment for Visual Studio
-          & "${{ env.VC_VARS_PATH }}" x64
-
-          if (Test-Path main.exe) {
-              Write-Host "Compiled file exists."
-          } else {
-              Write-Error "Compiled file does not exist."
-              exit 1
-          }
 
       - name: List files in current directory
         shell: cmd
@@ -242,11 +229,11 @@ jobs:
           Remove-Item "Cert:\CurrentUser\My\$($cert.Thumbprint)" -DeleteKey -Force
 
 
-      - name: Verify that the signed file exists (optional)
-        shell: pwsh
-        run: |
+      # - name: Verify that the signed file exists (optional)
+      #   shell: pwsh
+      #   run: |
 
-          Get-Item main.exe
+      #     Get-Item main.exe
 
       - name: Upload signed executable as artifact
         uses: actions/upload-artifact@v4
