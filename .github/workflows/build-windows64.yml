@@ -127,15 +127,22 @@ jobs:
 
           # --- Variable Setup ---
           $certName = "MyTestSigningCert-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-          # Generate a random, secure password for the PFX file
+
+          # ConvertTo-SecureString
+          #   https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.security/convertto-securestring
+          #  - Convert plain text password to a secure string (simply convert string to secure string in .NET)
+          #  - (New-Guid).ToString() generates a new GUID, which is a good choice for a secure password.
+          #  - AsPlainText: input string is already in plain text (no need to decrypt)
           $pfxPassword = ConvertTo-SecureString -String (New-Guid).ToString() -AsPlainText -Force
           $pfxPath = "$($env:TEMP)\$($certName).pfx"
           $fileToSign = "main.exe" # Assumes main.exe already exists from your compilation step
           $timestampServer = "http://timestamp.digicert.com" # Timestamp server URL
 
+
           Write-Host "--- Step 1: Generating Self-Signed Certificate ---"
           Write-Host "Generating self-signed certificate: $certName"
           # 1. Generate the self-signed certificate
+          #  https://learn.microsoft.com/en-us/powershell/module/pki/new-selfsignedcertificate
           # -CertStoreLocation Cert:\CurrentUser\My : Stores the certificate in the current user's certificate store
           # -Type CodeSigning : Specifies the certificate's purpose as code signing
           # -Subject "CN=$certName" : Sets the common name of the certificate
@@ -143,15 +150,28 @@ jobs:
           # -NotAfter (Get-Date).AddDays(7) : Certificate valid for 7 days (sufficient for testing)
           # -KeyUsage DigitalSignature : Key usage for digital signatures
           # -HashAlgorithm SHA256 : Hashing algorithm for the signature
-          $cert = New-SelfSignedCertificate `
-              -CertStoreLocation Cert:\CurrentUser\My `
-              -Type CodeSigning `
-              -Subject "CN=$certName" `
-              -KeyAlgorithm RSA `
-              -KeyLength 2048 `
-              -NotAfter (Get-Date).AddDays(7) `
-              -KeyUsage DigitalSignature `
-              -HashAlgorithm SHA256
+          $param = @{
+              CertStoreLocation = 'Cert:\CurrentUser\My'
+              Type = 'CodeSigning'
+              Subject = "CN=$certName"
+              KeyAlgorithm = 'RSA'
+              KeyLength = 2048
+              NotAfter = (Get-Date).AddDays(7)
+              KeyUsage = 'DigitalSignature'
+              HashAlgorithm = 'SHA256'
+          }
+          # Create the self-signed certificate
+          $cert = New-SelfSignedCertificate @param
+
+          # $cert = New-SelfSignedCertificate `
+          #     -CertStoreLocation Cert:\CurrentUser\My `
+          #     -Type CodeSigning `
+          #     -Subject "CN=$certName" `
+          #     -KeyAlgorithm RSA `
+          #     -KeyLength 2048 `
+          #     -NotAfter (Get-Date).AddDays(7) `
+          #     -KeyUsage DigitalSignature `
+          #     -HashAlgorithm SHA256
 
           Write-Host "Certificate generated with thumbprint: $($cert.Thumbprint)"
 
