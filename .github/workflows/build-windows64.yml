@@ -178,6 +178,13 @@ jobs:
           Write-Host "Certificate details:"
           Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert
 
+          Write-Host "Sign code with the generated certificate: $certName"
+          $param = @{
+              FilePath = $fileToSign
+              Certificate = $cert  # Use the certificate object we just generated
+          }
+          Set-AuthenticodeSignature @param
+
 
           Write-Host "--- Step 2: Exporting Certificate to PFX File ---"
           # 2. Export the certificate with its private key to a PFX file
