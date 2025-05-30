@@ -30,13 +30,14 @@ jobs:
 
 
       - name: Dynamically find vcvarsall.bat (Bash)
-        id: find-vcvarsall
+        id: find-vcvarsall-bash
         shell: bash
         run: |
 
           echo "---------------------------- 0"
-          VS_INSTALL_PATH=$( cmd.exe /c "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -products * -property installationPath" | sed 's|\\|/|g' )
-          echo "VS_INSTALL_PATH: $VS_INSTALL_PATH"
+          # VS_INSTALL_PATH=$( cmd.exe /c "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -products * -property installationPath" | sed 's|\\|/|g' )
+          VS_INSTALL_PATH_BASH=$( cmd.exe /c "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -products * -property installationPath" )
+          echo "VS_INSTALL_PATH_BASH: $VS_INSTALL_PATH_BASH"
 
           # echo "-------------------------- 1"
           # VSWHERE_EXE_PATH="/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe"
@@ -45,38 +46,40 @@ jobs:
           # -latest -products * -property installationPath)
           # | sed 's|\\|/|g')
           # echo "-------------------------- 2"
-          # VS_INSTALL_PATH=$( "/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products * -property installationPath | sed 's|\\|/|g' )
-          echo "-------------------------- 3"
-          echo "VS_INSTALL_PATH: $VS_INSTALL_PATH"
+          # VS_INSTALL_PATH_BASH=$( "/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products * -property installationPath | sed 's|\\|/|g' )
+          # echo "-------------------------- 3"
+          # echo "VS_INSTALL_PATH_BASH: $VS_INSTALL_PATH_BASH"
+          # exit 1
+
+
+      - name: Dynamically find vcvarsall.bat (PowerShell)
+        id: find-vcvarsall
+        shell: pwsh
+        run: |
+
+          # Use vswhere.exe to find the path to the latest VS installation
+          $vsInstallPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath
+
+          if (-not $vsInstallPath) {
+            Write-Error "Visual Studio installation path not found using vswhere.exe."
+            exit 1
+          }
+
+          # Construct the full path to vcvarsall.bat
+          $vcvarsallPath = Join-Path $vsInstallPath "VC\Auxiliary\Build\vcvarsall.bat"
+
+          if (-not (Test-Path $vcvarsallPath)) {
+            Write-Error "vcvarsall.bat not found at '$vcvarsallPath'."
+            exit 1
+          }
+
+          Write-Host "Found vcvarsall.bat at: $vcvarsallPath"
+
+          # You can save this path as an environment variable for subsequent steps
+          echo "VC_VARS_PATH=$vcvarsallPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "VS_INSTALL_PATH=$vsInstallPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
           exit 1
-
-
-      # - name: Dynamically find vcvarsall.bat (PowerShell)
-      #   id: find-vcvarsall
-      #   shell: pwsh
-      #   run: |
-
-      #     # Use vswhere.exe to find the path to the latest VS installation
-      #     $vsInstallPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath
-
-      #     if (-not $vsInstallPath) {
-      #       Write-Error "Visual Studio installation path not found using vswhere.exe."
-      #       exit 1
-      #     }
-
-      #     # Construct the full path to vcvarsall.bat
-      #     $vcvarsallPath = Join-Path $vsInstallPath "VC\Auxiliary\Build\vcvarsall.bat"
-
-      #     if (-not (Test-Path $vcvarsallPath)) {
-      #       Write-Error "vcvarsall.bat not found at '$vcvarsallPath'."
-      #       exit 1
-      #     }
-
-      #     Write-Host "Found vcvarsall.bat at: $vcvarsallPath"
-
-      #     # You can save this path as an environment variable for subsequent steps
-      #     echo "VC_VARS_PATH=$vcvarsallPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-      #     echo "VS_INSTALL_PATH=$vsInstallPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Print environment variables (cmd)
         shell: cmd
