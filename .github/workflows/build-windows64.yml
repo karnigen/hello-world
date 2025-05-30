@@ -22,34 +22,12 @@ jobs:
 
 
 
-      - name: Setup Git for Windows SDK # https://github.com/git-for-windows/setup-git-for-windows-sdk
-        uses: git-for-windows/setup-git-for-windows-sdk@v1
-        with:
-          flavor: minimal
-          # flavor: build-installers
+      # - name: Setup Git for Windows SDK # https://github.com/git-for-windows/setup-git-for-windows-sdk
+      #   uses: git-for-windows/setup-git-for-windows-sdk@v1
+      #   with:
+      #     flavor: minimal
+      #     # flavor: build-installers
 
-
-      # - name: Dynamically find vcvarsall.bat (Bash)
-      #   id: find-vcvarsall-bash
-      #   shell: bash
-      #   run: |
-
-      #     echo "---------------------------- 0"
-      #     # VS_INSTALL_PATH=$( cmd.exe /c "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -products * -property installationPath" | sed 's|\\|/|g' )
-      #     VS_INSTALL_PATH_BASH=$( cmd.exe /c /Q "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -products * -property installationPath" )
-      #     echo "VS_INSTALL_PATH_BASH: $VS_INSTALL_PATH_BASH"
-
-          # echo "-------------------------- 1"
-          # VSWHERE_EXE_PATH="/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe"
-          # $( "${VSWHERE_EXE_PATH}" )
-
-          # -latest -products * -property installationPath)
-          # | sed 's|\\|/|g')
-          # echo "-------------------------- 2"
-          # VS_INSTALL_PATH_BASH=$( "/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products * -property installationPath | sed 's|\\|/|g' )
-          # echo "-------------------------- 3"
-          # echo "VS_INSTALL_PATH_BASH: $VS_INSTALL_PATH_BASH"
-          # exit 1
 
 
       - name: Dynamically find vcvarsall.bat (PowerShell)
@@ -93,7 +71,7 @@ jobs:
           echo %PATH%
 
 
-      - name: run clrver
+      - name: run clrver (only for cmd, not working for pwsh)
         # check if clrver.exe is available on the PATH, then all should be fine
         shell: cmd
         run: |
@@ -104,25 +82,8 @@ jobs:
           :: signtool.exe is part of the Windows SDK, which is pre-installed on Windows runners
           :: signtool /v
 
-      # not working
-      # - name: run clrver (PowerShell)
-      #   shell: pwsh
-      #   run: |
 
-      #     # Set up the environment for Visual Studio
-      #     & "${{ env.VC_VARS_PATH }}" x64
-
-      #     # clrver.exe is part of the .NET SDK, which is pre-installed on Windows runners
-      #     clrver.exe
-
-      #     # signtool.exe is part of the Windows SDK, which is pre-installed on Windows runners
-      #     signtool.exe /v
-
-      # - name: Print environment (cmd)
-      #   shell: cmd
-      #   run: set
-
-      - name: Print environment (PowerShell)
+      - name: Print environment & PowerShell version
         shell: pwsh
         run: |
 
@@ -205,6 +166,20 @@ jobs:
 
           Write-Host "PFX file exported to: $pfxPath"
 
+
+          # --- NEW STEP: Import the self-signed certificate into the Trusted Root store ---
+          Write-Host "--- Step 2.5: Importing self-signed cert to Trusted Root Certification Authorities (LocalMachine) ---"
+          # This is necessary for the system to trust the self-signed certificate for verification.
+          try {
+              $cert | Import-Certificate -CertStoreLocation Cert:\LocalMachine\Root -ErrorAction Stop
+              Write-Host "Certificate imported to LocalMachine\Root store."
+          }
+          catch {
+              Write-Error "Failed to import certificate to LocalMachine\Root: $($_.Exception.Message)"
+              exit 1 # Exit the workflow on import error
+          }
+
+
           Write-Host "--- Step 3: Signing the File using Set-AuthenticodeSignature ---"
           Write-Host "Signing file '$fileToSign' using Set-AuthenticodeSignature..."
           try {
@@ -239,192 +214,26 @@ jobs:
               exit 1 # Exit the workflow on verification error
           }
 
+
           Write-Host "--- Step 5: Cleanup ---"
           Write-Host "Cleaning up generated certificate and PFX file..."
           Remove-Item $pfxPath -Force
-          # Remove the certificate from the store, including its private key
+          # Remove the certificate from the current user's store, including its private key
           Remove-Item "Cert:\CurrentUser\My\$($cert.Thumbprint)" -DeleteKey -Force
+          # --- IMPORTANT: Remove the certificate from the Trusted Root store after completion! ---
+          Write-Host "Removing certificate from LocalMachine\Root store..."
+          try {
+              Remove-Item "Cert:\LocalMachine\Root\$($cert.Thumbprint)" -DeleteKey -Force -ErrorAction Stop
+              Write-Host "Certificate removed from LocalMachine\Root store."
+          }
+          catch {
+              Write-Error "Failed to remove certificate from LocalMachine\Root: $($_.Exception.Message)"
+              # We don't exit the workflow here, as it's just cleanup and the main part has already finished.
+          }
+
 
           Write-Host "All operations completed successfully."
 
-
-
-      # - name: Generate Self-Signed Certificate, Sign and Verify (Pure PowerShell)
-      #   id: generate-sign-verify-cz
-      #   shell: pwsh # Explicitně specifikujeme PowerShell
-
-      #   run: |
-
-      #     # Důležité: Nastavení prostředí MSVC.
-      #     # To je stále potřeba, pokud by další kroky (mimo tento) používaly nástroje MSVC (např. cl.exe).
-      #     # Ujistěte se, že VC_VARS_PATH je správně nastavená z předchozího kroku přes GITHUB_ENV.
-      #     & "${{ env.VC_VARS_PATH }}" x64
-
-      #     # --- Nastavení proměnných ---
-      #     $certName = "MyTestSigningCert-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-      #     # Generujeme náhodné, bezpečné heslo pro PFX soubor
-      #     $pfxPassword = ConvertTo-SecureString -String (New-Guid).ToString() -AsPlainText -Force
-      #     $pfxPath = "$($env:TEMP)\$($certName).pfx"
-      #     $fileToSign = "main.exe" # Předpokládá se, že main.exe už existuje z kompilačního kroku
-      #     $timestampServer = "http://timestamp.digicert.com" # Server pro časové razítko
-
-      #     Write-Host "--- Krok 1: Generování self-signed certifikátu ---"
-      #     Write-Host "Generuji self-signed certifikát: $certName"
-      #     # 1. Generujeme self-signed certifikát
-      #     $cert = New-SelfSignedCertificate `
-      #         -CertStoreLocation Cert:\CurrentUser\My `
-      #         -Type CodeSigning `
-      #         -Subject "CN=$certName" `
-      #         -KeyAlgorithm RSA `
-      #         -KeyLength 2048 `
-      #         -NotAfter (Get-Date).AddDays(7) `
-      #         -KeyUsage DigitalSignature `
-      #         -HashAlgorithm SHA256
-
-      #     Write-Host "Certifikát vygenerován s otiskem: $($cert.Thumbprint)"
-
-      #     Write-Host "--- Krok 2: Export certifikátu do PFX souboru ---"
-      #     # 2. Exportujeme certifikát s jeho privátním klíčem do PFX souboru
-      #     Export-PfxCertificate `
-      #         -Cert $cert `
-      #         -FilePath $pfxPath `
-      #         -Password $pfxPassword
-
-      #     Write-Host "PFX soubor exportován do: $pfxPath"
-
-      #     Write-Host "--- Krok 3: Podepsání souboru pomocí Set-AuthenticodeSignature ---"
-      #     Write-Host "Podepisuji soubor '$fileToSign' pomocí Set-AuthenticodeSignature..."
-      #     try {
-      #         Set-AuthenticodeSignature `
-      #             -FilePath "$fileToSign" `
-      #             -Certificate $cert ` # Použijeme objekt certifikátu, který jsme právě vygenerovali
-      #             -HashAlgorithm SHA256 ` # Algoritmus haše souboru
-      #             -TimestampServer "$timestampServer" ` # Server pro časové razítko
-      #             -ErrorAction Stop # Důležité: Zastaví skript při jakékoli chybě podpisu
-
-      #         Write-Host "Soubor '$fileToSign' úspěšně podepsán pomocí Set-AuthenticodeSignature."
-      #     }
-      #     catch {
-      #         Write-Error "Set-AuthenticodeSignature selhal: $($_.Exception.Message)"
-      #         exit 1 # Ukončíme workflow při chybě
-      #     }
-
-      #     Write-Host "--- Krok 4: Ověření podpisu pomocí Get-AuthenticodeSignature ---"
-      #     Write-Host "Ověřuji podpis souboru '$fileToSign'..."
-      #     try {
-      #         $signature = Get-AuthenticodeSignature -FilePath "$fileToSign" -ErrorAction Stop
-
-      #         if ($signature.Status -eq 'Valid') {
-      #             Write-Host "Podpis je platný. Podepsáno: $($signature.SignerCertificate.Subject)"
-      #         } else {
-      #             Write-Error "Podpis je NEPLATNÝ. Stav: $($signature.Status) - Chyba: $($signature.StatusMessage)"
-      #             exit 1 # Ukončíme workflow, pokud podpis není platný
-      #         }
-      #     }
-      #     catch {
-      #         Write-Error "Get-AuthenticodeSignature selhal při ověřování: $($_.Exception.Message)"
-      #         exit 1 # Ukončíme workflow při chybě ověřování
-      #     }
-
-      #     Write-Host "--- Krok 5: Úklid ---"
-      #     Write-Host "Uklízím vygenerovaný certifikát a PFX soubor..."
-      #     Remove-Item $pfxPath -Force
-      #     # Odebereme certifikát z úložiště, včetně privátního klíče
-      #     Remove-Item "Cert:\CurrentUser\My\$($cert.Thumbprint)" -DeleteKey -Force
-
-      #     Write-Host "Všechny operace dokončeny úspěšně."
-
-
-
-
-      # - name: Generate Self-Signed Certificate and Sign OLD
-      #   id: generate-sign-verify-old
-      #   shell: pwsh # Explicitly specify PowerShell
-
-      #   run: |
-
-      #     # Setup paths
-      #     & "${{ env.VC_VARS_PATH }}" x64
-
-
-      #     $certName = "MyTestSigningCert-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-      #     # Generate a random, secure password for the PFX file
-      #     $pfxPassword = ConvertTo-SecureString -String (New-Guid).ToString() -AsPlainText -Force
-      #     $pfxPath = "$($env:TEMP)\$($certName).pfx"
-      #     $fileToSign = "main.exe"
-
-      #     Write-Host "Generating self-signed certificate: $certName"
-      #     # 1. Generate the self-signed certificate
-      #     # -CertStoreLocation Cert:\CurrentUser\My : Stores the certificate in the current user's certificate store
-      #     # -Type CodeSigning : Specifies the certificate's purpose as code signing
-      #     # -Subject "CN=$certName" : Sets the common name of the certificate
-      #     # -KeyAlgorithm RSA -KeyLength 2048 : Sets key parameters
-      #     # -NotAfter (Get-Date).AddDays(7) : Certificate valid for 7 days (sufficient for testing)
-      #     # -KeyUsage DigitalSignature : Key usage for digital signatures
-      #     # -HashAlgorithm SHA256 : Hashing algorithm for the signature
-      #     $cert = New-SelfSignedCertificate `
-      #         -CertStoreLocation Cert:\CurrentUser\My `
-      #         -Type CodeSigning `
-      #         -Subject "CN=$certName" `
-      #         -KeyAlgorithm RSA `
-      #         -KeyLength 2048 `
-      #         -NotAfter (Get-Date).AddDays(7) `
-      #         -KeyUsage DigitalSignature `
-      #         -HashAlgorithm SHA256
-
-      #     Write-Host "Certificate generated with thumbprint: $($cert.Thumbprint)"
-
-      #     # 2. Export the certificate with its private key to a PFX file
-      #     # -FilePath $pfxPath : Path for the PFX file
-      #     # -Password $pfxPassword : Password for the PFX file
-      #     Export-PfxCertificate `
-      #         -Cert $cert `
-      #         -FilePath $pfxPath `
-      #         -Password $pfxPassword
-
-      #     Write-Host "PFX file exported to: $pfxPath"
-
-      #     # 3. Sign the file using SignTool.exe
-      #     # SignTool.exe is part of the Windows SDK, pre-installed on Windows runners
-      #     # /f $pfxPath : Path to the PFX file
-      #     # /p $pfxPassword.ToString() : Password for the PFX file
-      #     # /fd sha256 : File digest algorithm
-      #     # /td sha256 : Timestamp digest algorithm
-      #     # /tr http://timestamp.digicert.com : Timestamp server URL (crucial for signature validity after certificate expiration)
-      #     signtool sign `
-      #         /f "$pfxPath" `
-      #         /p "$($pfxPassword.ToString())" `
-      #         /fd sha256 `
-      #         /td sha256 `
-      #         /tr http://timestamp.digicert.com `
-      #         "$fileToSign"
-
-      #     if ($LastExitCode -ne 0) {
-      #         Write-Error "SignTool failed with exit code $LastExitCode"
-      #         exit $LastExitCode
-      #     }
-      #     Write-Host "File '$fileToSign' signed successfully."
-
-      #     # 4. (Optional) Verify the signature
-      #     Write-Host "Verifying signature..."
-      #     signtool.exe verify /pa "$fileToSign"
-      #     if ($LastExitCode -ne 0) {
-      #         Write-Error "Signature verification failed with exit code $LastExitCode"
-      #         exit $LastExitCode
-      #     }
-      #     Write-Host "Signature verified successfully."
-
-      #     # 5. Cleanup: Remove the certificate from the store and delete the PFX file
-      #     Write-Host "Cleaning up generated certificate and PFX file..."
-      #     Remove-Item $pfxPath -Force
-      #     Remove-Item "Cert:\CurrentUser\My\$($cert.Thumbprint)" -DeleteKey -Force
-
-
-      # - name: Verify that the signed file exists (optional)
-      #   shell: pwsh
-      #   run: |
-
-      #     Get-Item main.exe
 
       - name: Upload signed executable as artifact
         uses: actions/upload-artifact@v4
