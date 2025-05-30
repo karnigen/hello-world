@@ -5,6 +5,7 @@ on:
     tags: [build*]
   workflow_dispatch:
 
+# this is hardcoded path to vcvarsall.bat - see later step of dynamically finding it
 # env:
 #   VC_VARS_PATH: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
 
@@ -24,6 +25,7 @@ jobs:
           # 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin' # Path to MSBuild
 
       - name: Dynamically find vcvarsall.bat (PowerShell)
+        id: find-vcvarsall
         shell: pwsh
         run: |
 
@@ -47,7 +49,7 @@ jobs:
 
           # You can save this path as an environment variable for subsequent steps
           echo "VC_VARS_PATH=$vcvarsallPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
-
+          echo "VS_INSTALL_PATH=$vsInstallPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
       - name: Print full PATH (cmd)
         shell: cmd
@@ -55,26 +57,15 @@ jobs:
           echo %PATH%
 
       - name: run clrver
+        # check if clrver.exe is available on the PATH, then all should be fine
         shell: cmd
         run: |
+
           CALL "${{ env.VC_VARS_PATH }}" x64
           :: clrver.exe is part of the .NET SDK, which is pre-installed on Windows runners
           clrver
           :: signtool.exe is part of the Windows SDK, which is pre-installed on Windows runners
-          signtool /v
-
-      - name: Find all exe in C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC
-        shell: cmd
-        run: |
-
-          :: dir "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild"\*.exe /s /b
-          dir "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC"\*.exe /s /b
-
-
-      # - name: print dir of C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin
-      #   shell: cmd
-      #   run: |
-      #     dir "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin"
+          :: signtool /v
 
 
       - name: Print environment (PowerShell)
@@ -86,8 +77,9 @@ jobs:
       - name: Compile main.cpp
         shell: cmd # smd or pwsh
         run: |
+
           :: Set up the environment for Visual Studio
-          CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
+          CALL "${{ env.VC_VARS_PATH }}" x64
           WHERE cl.exe
           :: Fe - name of output file
           cl main.cpp /Fe:main.exe
@@ -97,7 +89,7 @@ jobs:
         run: |
 
           # Set up the environment for Visual Studio
-          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
+          & "${{ env.VC_VARS_PATH }}" x64
 
           if (Test-Path main.exe) {
               Write-Host "Compiled file exists."
@@ -105,7 +97,6 @@ jobs:
               Write-Error "Compiled file does not exist."
               exit 1
           }
-
 
       - name: List files in current directory
         shell: cmd
@@ -124,8 +115,9 @@ jobs:
 
         run: |
 
-          # Ensure the SignTool.exe is available in the PATH
-          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
+          # Setup paths
+          & "${{ env.VC_VARS_PATH }}" x64
+
 
           $certName = "MyTestSigningCert-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
           # Generate a random, secure password for the PFX file
@@ -171,7 +163,7 @@ jobs:
           # /fd sha256 : File digest algorithm
           # /td sha256 : Timestamp digest algorithm
           # /tr http://timestamp.digicert.com : Timestamp server URL (crucial for signature validity after certificate expiration)
-          signtool.exe sign `
+          signtool sign `
               /f "$pfxPath" `
               /p "$($pfxPassword.ToString())" `
               /fd sha256 `
@@ -203,6 +195,7 @@ jobs:
       - name: Verify that the signed file exists (optional)
         shell: pwsh
         run: |
+
           Get-Item main.exe
 
       - name: Upload signed executable as artifact
