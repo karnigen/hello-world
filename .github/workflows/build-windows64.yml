@@ -171,7 +171,8 @@ jobs:
           Write-Host "--- Step 2.5: Importing self-signed cert to Trusted Root Certification Authorities (LocalMachine) ---"
           # This is necessary for the system to trust the self-signed certificate for verification.
           try {
-              $cert | Import-Certificate -CertStoreLocation Cert:\LocalMachine\Root -ErrorAction Stop
+              # $cert | Import-Certificate -CertStoreLocation Cert:\LocalMachine\Root -ErrorAction Stop
+              Import-Certificate -Certificate $cert -CertStoreLocation Cert:\LocalMachine\Root -ErrorAction Stop
               Write-Host "Certificate imported to LocalMachine\Root store."
           }
           catch {
