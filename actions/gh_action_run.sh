@@ -13,7 +13,10 @@ BR=kgn/compile
 #gh workflow run $WF -r kgn/pyproject-toml-investigation -f build_type=$build_type
 #gh workflow run $WF -r kgn/pyproject-toml-investigation -f build_type=$build_type -f break_on=$break_on
 
-gh workflow run $WF -r $BR 
+git commit -a -m "Automated: Build"
+#git push
+
+#gh workflow run $WF -r $BR 
 
 
 
