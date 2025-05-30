@@ -29,15 +29,15 @@ jobs:
           # flavor: build-installers
 
 
-      - name: Dynamically find vcvarsall.bat (Bash)
-        id: find-vcvarsall-bash
-        shell: bash
-        run: |
+      # - name: Dynamically find vcvarsall.bat (Bash)
+      #   id: find-vcvarsall-bash
+      #   shell: bash
+      #   run: |
 
-          echo "---------------------------- 0"
-          # VS_INSTALL_PATH=$( cmd.exe /c "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -products * -property installationPath" | sed 's|\\|/|g' )
-          VS_INSTALL_PATH_BASH=$( cmd.exe /c /Q "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -products * -property installationPath" )
-          echo "VS_INSTALL_PATH_BASH: $VS_INSTALL_PATH_BASH"
+      #     echo "---------------------------- 0"
+      #     # VS_INSTALL_PATH=$( cmd.exe /c "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -products * -property installationPath" | sed 's|\\|/|g' )
+      #     VS_INSTALL_PATH_BASH=$( cmd.exe /c /Q "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -products * -property installationPath" )
+      #     echo "VS_INSTALL_PATH_BASH: $VS_INSTALL_PATH_BASH"
 
           # echo "-------------------------- 1"
           # VSWHERE_EXE_PATH="/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe"
@@ -79,7 +79,6 @@ jobs:
           echo "VC_VARS_PATH=$vcvarsallPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "VS_INSTALL_PATH=$vsInstallPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-          exit 1
 
       - name: Print environment variables (cmd)
         shell: cmd
@@ -92,6 +91,19 @@ jobs:
         shell: cmd
         run: |
           echo %PATH%
+
+      - name: run clrver bash
+        # check if clrver.exe is available on the PATH, then all should be fine
+        shell: bash
+        run: |
+
+          # Set up the environment for Visual Studio
+          source "${{ env.VC_VARS_PATH }}" x64
+
+          # clrver.exe is part of the .NET SDK, which is pre-installed on Windows runners
+          clrver
+          # signtool.exe is part of the Windows SDK, which is pre-installed on Windows runners
+          # signtool /v
 
       - name: run clrver
         # check if clrver.exe is available on the PATH, then all should be fine
