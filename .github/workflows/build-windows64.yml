@@ -29,14 +29,14 @@ jobs:
           # flavor: build-installers
 
 
-      - name: Dynamically find vcvarsall.bat (PowerShell)
+      - name: Dynamically find vcvarsall.bat (Bash)
         id: find-vcvarsall
         shell: bash
         run: |
 
-          #   $vsInstallPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath
-          vsInstallPath = "${{ env.ProgramFiles(x86) }}/Microsoft Visual Studio/Installer/vswhere.exe"
-          echo "vsInstallPath: $vsInstallPath"
+          VS_INSTALL_PATH=$(/c/"Program Files (x86)"/"Microsoft Visual Studio"/Installer/vswhere.exe -latest -products * -property installationPath | sed 's|\\|/|g')
+
+          echo "VS_INSTALL_PATH: $VS_INSTALL_PATH"
           exit 1
 
 
