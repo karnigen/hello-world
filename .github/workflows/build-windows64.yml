@@ -163,15 +163,6 @@ jobs:
           # Create the self-signed certificate
           $cert = New-SelfSignedCertificate @param
 
-          # $cert = New-SelfSignedCertificate `
-          #     -CertStoreLocation Cert:\CurrentUser\My `
-          #     -Type CodeSigning `
-          #     -Subject "CN=$certName" `
-          #     -KeyAlgorithm RSA `
-          #     -KeyLength 2048 `
-          #     -NotAfter (Get-Date).AddDays(7) `
-          #     -KeyUsage DigitalSignature `
-          #     -HashAlgorithm SHA256
 
           Write-Host "Certificate generated with thumbprint: $($cert.Thumbprint)"
 
@@ -186,95 +177,95 @@ jobs:
           Set-AuthenticodeSignature @param
 
 
-          Write-Host "--- Step 2: Exporting Certificate to PFX File ---"
-          # 2. Export the certificate with its private key to a PFX file
-          #   https://learn.microsoft.com/en-us/powershell/module/pki/export-pfxcertificate
-          # -FilePath $pfxPath : Path for the PFX file
-          # -Password $pfxPassword : Password for the PFX file
-          $param = @{
-              Cert = $cert
-              FilePath = $pfxPath
-              Password = $pfxPassword
-          }
-          Export-PfxCertificate @param
+          # Write-Host "--- Step 2: Exporting Certificate to PFX File ---"
+          # # 2. Export the certificate with its private key to a PFX file
+          # #   https://learn.microsoft.com/en-us/powershell/module/pki/export-pfxcertificate
+          # # -FilePath $pfxPath : Path for the PFX file
+          # # -Password $pfxPassword : Password for the PFX file
+          # $param = @{
+          #     Cert = $cert
+          #     FilePath = $pfxPath
+          #     Password = $pfxPassword
+          # }
+          # Export-PfxCertificate @param
 
-          Write-Host "PFX file exported to: $pfxPath"
-
-
-          # --- NEW STEP: Import the self-signed certificate into the Trusted Root store ---
-          Write-Host "--- Step 2.5: Importing self-signed cert to Trusted Root Certification Authorities (LocalMachine) ---"
-          # This is necessary for the system to trust the self-signed certificate for verification.
-          try {
-              # https://learn.microsoft.com/en-us/powershell/module/pki/import-certificate
-              # $cert | Import-Certificate -CertStoreLocation Cert:\LocalMachine\Root -ErrorAction Stop
-              Import-Certificate -Filepath $cert -CertStoreLocation Cert:\LocalMachine\Root
-              Write-Host "Certificate imported to LocalMachine\Root store."
-          }
-          catch {
-              Write-Error "Failed to import certificate to LocalMachine\Root: $($_.Exception.Message)"
-              exit 1 # Exit the workflow on import error
-          }
+          # Write-Host "PFX file exported to: $pfxPath"
 
 
-          Write-Host "--- Step 3: Signing the File using Set-AuthenticodeSignature ---"
-          Write-Host "Signing file '$fileToSign' using Set-AuthenticodeSignature..."
-          try {
-              # Set-AuthenticodeSignature is used to sign the file with the generated certificate
-              # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-authenticodesignature
-
-              $param = @{
-              FilePath = $fileToSign
-              Certificate = $cert  # Use the certificate object we just generated
-              }
-              Set-AuthenticodeSignature @param
-
-              # Set-AuthenticodeSignature `
-              #     -FilePath "$fileToSign" `
-              #     -Certificate $cert  # Use the certificate object we just generated
-              #     # -HashAlgorithm SHA256 ` # File digest algorithm
-              #     # -TimestampServer "$timestampServer" ` # Timestamp server URL
-              #     # -ErrorAction Stop # Important: Stops the script on any signing error
-
-              Write-Host "File '$fileToSign' signed successfully using Set-AuthenticodeSignature."
-          }
-          catch {
-              Write-Error "Set-AuthenticodeSignature failed: $($_.Exception.Message)"
-              exit 1 # Exit the workflow on error
-          }
-
-          Write-Host "--- Step 4: Verifying the Signature using Get-AuthenticodeSignature ---"
-          Write-Host "Verifying signature of file '$fileToSign'..."
-          try {
-              $signature = Get-AuthenticodeSignature -FilePath "$fileToSign" -ErrorAction Stop
-
-              if ($signature.Status -eq 'Valid') {
-                  Write-Host "Signature is VALID. Signed by: $($signature.SignerCertificate.Subject)"
-              } else {
-                  Write-Error "Signature is INVALID. Status: $($signature.Status) - Error: $($signature.StatusMessage)"
-                  exit 1 # Exit the workflow if signature is not valid
-              }
-          }
-          catch {
-              Write-Error "Get-AuthenticodeSignature failed during verification: $($_.Exception.Message)"
-              exit 1 # Exit the workflow on verification error
-          }
+          # # --- NEW STEP: Import the self-signed certificate into the Trusted Root store ---
+          # Write-Host "--- Step 2.5: Importing self-signed cert to Trusted Root Certification Authorities (LocalMachine) ---"
+          # # This is necessary for the system to trust the self-signed certificate for verification.
+          # try {
+          #     # https://learn.microsoft.com/en-us/powershell/module/pki/import-certificate
+          #     # $cert | Import-Certificate -CertStoreLocation Cert:\LocalMachine\Root -ErrorAction Stop
+          #     Import-Certificate -Filepath $cert -CertStoreLocation Cert:\LocalMachine\Root
+          #     Write-Host "Certificate imported to LocalMachine\Root store."
+          # }
+          # catch {
+          #     Write-Error "Failed to import certificate to LocalMachine\Root: $($_.Exception.Message)"
+          #     exit 1 # Exit the workflow on import error
+          # }
 
 
-          Write-Host "--- Step 5: Cleanup ---"
-          Write-Host "Cleaning up generated certificate and PFX file..."
-          Remove-Item $pfxPath -Force
-          # Remove the certificate from the current user's store, including its private key
-          Remove-Item "Cert:\CurrentUser\My\$($cert.Thumbprint)" -DeleteKey -Force
-          # --- IMPORTANT: Remove the certificate from the Trusted Root store after completion! ---
-          Write-Host "Removing certificate from LocalMachine\Root store..."
-          try {
-              Remove-Item "Cert:\LocalMachine\Root\$($cert.Thumbprint)" -DeleteKey -Force -ErrorAction Stop
-              Write-Host "Certificate removed from LocalMachine\Root store."
-          }
-          catch {
-              Write-Error "Failed to remove certificate from LocalMachine\Root: $($_.Exception.Message)"
-              # We don't exit the workflow here, as it's just cleanup and the main part has already finished.
-          }
+          # Write-Host "--- Step 3: Signing the File using Set-AuthenticodeSignature ---"
+          # Write-Host "Signing file '$fileToSign' using Set-AuthenticodeSignature..."
+          # try {
+          #     # Set-AuthenticodeSignature is used to sign the file with the generated certificate
+          #     # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-authenticodesignature
+
+          #     $param = @{
+          #     FilePath = $fileToSign
+          #     Certificate = $cert  # Use the certificate object we just generated
+          #     }
+          #     Set-AuthenticodeSignature @param
+
+          #     # Set-AuthenticodeSignature `
+          #     #     -FilePath "$fileToSign" `
+          #     #     -Certificate $cert  # Use the certificate object we just generated
+          #     #     # -HashAlgorithm SHA256 ` # File digest algorithm
+          #     #     # -TimestampServer "$timestampServer" ` # Timestamp server URL
+          #     #     # -ErrorAction Stop # Important: Stops the script on any signing error
+
+          #     Write-Host "File '$fileToSign' signed successfully using Set-AuthenticodeSignature."
+          # }
+          # catch {
+          #     Write-Error "Set-AuthenticodeSignature failed: $($_.Exception.Message)"
+          #     exit 1 # Exit the workflow on error
+          # }
+
+          # Write-Host "--- Step 4: Verifying the Signature using Get-AuthenticodeSignature ---"
+          # Write-Host "Verifying signature of file '$fileToSign'..."
+          # try {
+          #     $signature = Get-AuthenticodeSignature -FilePath "$fileToSign" -ErrorAction Stop
+
+          #     if ($signature.Status -eq 'Valid') {
+          #         Write-Host "Signature is VALID. Signed by: $($signature.SignerCertificate.Subject)"
+          #     } else {
+          #         Write-Error "Signature is INVALID. Status: $($signature.Status) - Error: $($signature.StatusMessage)"
+          #         exit 1 # Exit the workflow if signature is not valid
+          #     }
+          # }
+          # catch {
+          #     Write-Error "Get-AuthenticodeSignature failed during verification: $($_.Exception.Message)"
+          #     exit 1 # Exit the workflow on verification error
+          # }
+
+
+          # Write-Host "--- Step 5: Cleanup ---"
+          # Write-Host "Cleaning up generated certificate and PFX file..."
+          # Remove-Item $pfxPath -Force
+          # # Remove the certificate from the current user's store, including its private key
+          # Remove-Item "Cert:\CurrentUser\My\$($cert.Thumbprint)" -DeleteKey -Force
+          # # --- IMPORTANT: Remove the certificate from the Trusted Root store after completion! ---
+          # Write-Host "Removing certificate from LocalMachine\Root store..."
+          # try {
+          #     Remove-Item "Cert:\LocalMachine\Root\$($cert.Thumbprint)" -DeleteKey -Force -ErrorAction Stop
+          #     Write-Host "Certificate removed from LocalMachine\Root store."
+          # }
+          # catch {
+          #     Write-Error "Failed to remove certificate from LocalMachine\Root: $($_.Exception.Message)"
+          #     # We don't exit the workflow here, as it's just cleanup and the main part has already finished.
+          # }
 
 
           Write-Host "All operations completed successfully."
