@@ -102,7 +102,7 @@ jobs:
           :: clrver.exe is part of the .NET SDK, which is pre-installed on Windows runners
           clrver
           :: signtool.exe is part of the Windows SDK, which is pre-installed on Windows runners
-          # signtool /v
+          :: signtool /v
 
 
       - name: run clrver (PowerShell)
