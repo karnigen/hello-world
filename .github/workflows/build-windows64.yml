@@ -35,7 +35,8 @@ jobs:
         run: |
 
           echo "-------------------------- 1"
-          $("/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe")
+          VSWHERE_EXE_PATH="/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe"
+          $VSWHERE_EXE_PATH
 
           # -latest -products * -property installationPath)
           # | sed 's|\\|/|g')
