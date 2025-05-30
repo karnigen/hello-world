@@ -25,7 +25,13 @@ jobs:
         run: |
           echo %PATH%
 
-      - name: Find all exe in C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild
+      - name: run clrver
+        shell: cmd
+        run: |
+          :: clrver.exe is part of the .NET SDK, which is pre-installed on Windows runners
+          clrver
+
+      - name: Find all exe in C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC
         shell: cmd
         run: |
 
