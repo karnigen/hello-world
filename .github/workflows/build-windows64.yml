@@ -28,6 +28,12 @@ on:
   #   branches: [___]   # EVENT_NAME=pull_request      REF_TYPE=branch   REF=refs/heads/branch_name  REF_NAME=branch_name
   #   tags: [build*]    # EVENT_NAME=pull_request      REF_TYPE=tag      REF=refs/tags/build*        REF_NAME=tag_name
   workflow_dispatch:    # EVENT_NAME=workflow_dispatch REF_TYPE=branch   REF=refs/heads/branch_name  REF_NAME=branch_name
+    inputs:
+      tag_name:                   # ref: github.event.inputs.build_type | inputs.build_type
+        description: 'create a release tag with this name'  # description of the input
+        required: true
+        default: 'dev-build'  # default value
+        type: string  # type of the input, can be number, boolean, string, choice or environment
 
 # sign policy before build
 #   push into branch     - create release dev-build-branch_name
@@ -47,45 +53,49 @@ jobs:
 
           echo "-------------------------------------------------"
           echo "Signing policy..."
-          echo secrets.GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo secrets.GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # print ***, always set
 
           echo "-------------------------------------------------"
 
-          echo secrets.MY_KEY1: ${{ secrets.MY_KEY1 }}
-          echo secrets.MY_KEY2: ${{ secrets.MY_KEY2 }}
-          echo secrets.MY_KEY3: ${{ secrets.MY_KEY3 }}
+          echo secrets.MY_KEY1: ${{ secrets.MY_KEY1 }}  # is set
+          echo secrets.MY_KEY2: ${{ secrets.MY_KEY2 }}  # is " " one space, empty string can't be set in GitHub secrets
+          echo secrets.MY_KEY3: ${{ secrets.MY_KEY3 }}  # is not set
 
           echo "-------------------------------------------------"
+          # inputs
+          echo "tag_name: ${{ github.event.inputs.tag_name }}"  # ref: github.event.inputs.tag_name
 
+
+          echo "-------------------------------------------------"
+          # Check if secrets are available
           if [[ -n "${{ secrets.MY_KEY1 }}" ]]; then
-            echo "secrets.MY_KEY1 is set"
+            MY_SELF_SIGNED=false      # we have access to secrets
           else
-            echo "secrets.MY_KEY1 is not set"
+            MY_SELF_SIGNED=true       # we use on the fly signed keys
           fi
+          echo "MY_SELF_SIGNED=${MY_SELF_SIGNED}"
 
-          if [[ -n "${{ secrets.MY_KEY2 }}" ]]; then
-            echo "secrets.MY_KEY2 is set"
-          else
-            echo "secrets.MY_KEY2 is not set"
-          fi
+          echo "-------------------------------------------------"
 
-          if [[ -n "${{ secrets.MY_KEY3 }}" ]]; then
-            echo "secrets.MY_KEY3 is set"
+          # *** release requires tag name
+          # if push tag vX.X.X - release sign-policy, not v.X.X.X.alpha-xxx ...
+          if [[ "${EVENT_NAME}" == "push" && \
+                "${GITHUB_REF_TYPE}" == "tag" && \
+                "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            MY_TAG_NAME="${GITHUB_REF_NAME}"
+            MY_PRERELEASE=false  # we are creating a release
+            MY_NAME="${MY_TAG_NAME}"
           else
-            echo "secrets.MY_KEY3 is not set"
+            MY_TAG_NAME="dev-build-$(echo $GITHUB_REF_NAME | tr / -)"  # use branch name as tag
+            MY_PRERELEASE=true   # we are creating a pre-release
+            MY_NAME="development build of  ${GITHUB_REF_NAME}"
           fi
 
           echo "-------------------------------------------------"
 
-          # if push tag v* - release sign-policy
-          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Signing policy for tag ${GITHUB_REF_NAME}..."
-            # Add your signing logic here, e.g., sign the policy file
-            # For example, you could use a command like:
-            # gpg --sign policy.txt
-          else
-            echo "No signing needed for branch push or non-version tag."
-          fi
+          echo "MY_TAG_NAME=${MY_TAG_NAME}"
+          echo "MY_PRERELEASE=${MY_PRERELEASE}"
+          echo "MY_NAME=${MY_NAME}"
 
           echo "-------------------------------------------------"
           env | sort | grep GITHUB_
