@@ -59,7 +59,7 @@ jobs:
 
           for key in secrets.MY_KEY1 secrets.MY_KEY2 secrets.MY_KEY3; do
             # var_name="secrets.${key}"
-            if [[ -n "${{ $key }}" ]]; then
+            if [[ -n "${{ !key }}" ]]; then
               echo "$key is set"
             else
               echo "$key is not set"
