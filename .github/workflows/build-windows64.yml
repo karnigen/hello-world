@@ -12,6 +12,12 @@ name: Build Windows64
 #   GITHUB_EVENT_NAME
 #     GITHUB_REF_TYPE
 
+
+# !!! important:
+#   - A single tag can point to multiple branches, so there isn't a single matching branch for a tag.
+#   - deafult branch for workflow_dispatch is the default branch of the repository, which is usually 'main' or 'master'.
+#     - may be set gh workflow run -r <branch> <workflow_file>
+
 on:
   push:
     # branches: [___]   # EVENT_NAME=push              REF_TYPE=branch   REF=refs/heads/branch_name  REF_NAME=branch_name
@@ -25,7 +31,8 @@ on:
 
 # sign policy before build
 #   push into branch     - create release dev-build-branch_name
-#   push into tag v*.*.* - create release tag_name
+#   push into tag v*.*.* - create release tag_name, signed, if secrets are not available dev-build-tag_name
+#                 build* - create release dev-build-tag_name, self signed
 
 jobs:
   sign_policy:
@@ -37,7 +44,14 @@ jobs:
       - name: Sign policy
         shell: bash
         run: |
+
           echo "Signing policy..."
+
+          echo ${{ secrets.GITHUB_TOKEN }}
+          echo ${{ secrets.GITHUB_TOKEN }} | base64 --decode > policy.txt
+          echo "Policy content:"
+          cat policy.txt
+
           # if push tag v* - release sign-policy
           if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Signing policy for tag ${GITHUB_REF_NAME}..."

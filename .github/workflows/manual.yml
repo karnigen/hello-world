@@ -5,14 +5,14 @@ name: Manual workflow
 # Controls when the action will run. Workflow runs when manually triggered using the UI
 # or API.
 on:
-  push:
+  # push:
     # The branches that will trigger the workflow
     # branches:
     #   - main
     #   - master
-    tags:
-      - v*
-      - build*
+    # tags:
+    #   - v*
+    #   - build*
 
   workflow_dispatch:
     # Inputs the workflow accepts.
@@ -48,4 +48,4 @@ jobs:
     steps:
     # Runs a single command using the runners shell
     - name: Send greeting
-      run: echo "Hello ${{ inputs.name }}"
+      run: echo "Hello ${{ inputs.name }} in branch ${{ github.ref_name }}!"

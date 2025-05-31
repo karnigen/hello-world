@@ -17,8 +17,8 @@ BR=$(git rev-parse --abbrev-ref HEAD)
 #git commit -a -m "Automated Build"
 #git push
 
-#gh workflow run $WF -r $BR 
-gh workflow run $WF
+gh workflow run $WF -r $BR 
+#gh workflow run $WF
 
 
 
