@@ -37,7 +37,7 @@ jobs:
     steps:
     # Runs a single command using the runners shell
     - name: Print environment variables
-      run: printenv
+      run: printenv | sort
 
   # This workflow contains a single job called "greet"
   greet:
