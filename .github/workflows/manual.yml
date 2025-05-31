@@ -9,6 +9,7 @@ on:
     # The branches that will trigger the workflow
     branches:
       - main
+      - master
     tags:
       - v*
       - build-*
