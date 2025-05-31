@@ -57,6 +57,17 @@ jobs:
 
           echo "-------------------------------------------------"
 
+          for key in MY_KEY1 MY_KEY2 MY_KEY3; do
+            if [ -n "${!key}" ]; then
+              echo "$key is set"
+            else
+              echo "$key is not set"
+            fi
+          done
+
+
+          echo "-------------------------------------------------"
+
           # if push tag v* - release sign-policy
           if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Signing policy for tag ${GITHUB_REF_NAME}..."
