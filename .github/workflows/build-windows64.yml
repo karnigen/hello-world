@@ -31,7 +31,7 @@ on:
     inputs:
       tag_name:                   # ref: github.event.inputs.build_type | inputs.build_type
         description: 'create a release tag with this name'  # description of the input
-        required: true
+        required: false
         default: 'dev-build'  # default value
         type: string  # type of the input, can be number, boolean, string, choice or environment
 
@@ -88,7 +88,7 @@ jobs:
           else
             MY_TAG_NAME="dev-build-$(echo $GITHUB_REF_NAME | tr / -)"  # use branch name as tag
             MY_PRERELEASE=true   # we are creating a pre-release
-            MY_NAME="development build of  ${GITHUB_REF_NAME}"
+            MY_NAME="development build of ${GITHUB_REF_NAME}"
           fi
 
           echo "-------------------------------------------------"
