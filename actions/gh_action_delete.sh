@@ -9,7 +9,8 @@ set -e
 WF=build-windows64.yml
 
 # branch
-BR=kgn/compile
+#BR=kgn/compile
+BR=`git rev-parse --abbrev-ref HEAD`
 
 
 

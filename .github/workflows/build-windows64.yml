@@ -64,11 +64,7 @@ jobs:
 
           echo VS_INSTALL_PATH=%VS_INSTALL_PATH%
           echo VC_VARS_PATH=%VC_VARS_PATH%
-
-      - name: Print full PATH (cmd)
-        shell: cmd
-        run: |
-          echo %PATH%
+          echo PATH=%PATH%
 
 
       - name: run clrver (only for cmd, not working for pwsh)
@@ -109,30 +105,30 @@ jobs:
       - name: Upload unsigned executable as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: compiled-unsigned   # auto zip file
+          name: compiled-unsigned   # copy main.exe to compiled-unsigned.zip
           path: main.exe
 
 
-
+      # Generate a self-signed certificate, sign the executable, and verify the signature
+      # Using PowerShell is recommended for this task as it provides better control and flexibility.
       - name: Generate Self-Signed Certificate, Sign and Verify (Pure PowerShell)
         id: generate-sign-verify
         shell: pwsh # Explicitly specify PowerShell
 
         run: |
 
-          # Important: Set up the MSVC environment.
-          # This step is still necessary if other steps (outside this one) use MSVC tools (e.g., cl.exe).
-          # Ensure VC_VARS_PATH is correctly set from a previous step via GITHUB_ENV.
+          # Ensure VC_VARS_PATH is correctly set from a previous step via GITHUB_ENV. - not needed
           # & "${{ env.VC_VARS_PATH }}" x64
 
           # --- Variable Setup ---
+          # My self-signed certificate name (CN) for testing purposes
           $certName = "MyTestSigningCert-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
 
           # ConvertTo-SecureString
-          #   https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.security/convertto-securestring
-          #  - Convert plain text password to a secure string (simply convert string to secure string in .NET)
-          #  - (New-Guid).ToString() generates a new GUID, which is a good choice for a secure password.
+          #   https://learn.microsoft.com/powershell/module/microsoft.powershell.security/convertto-securestring
+          #  - (New-Guid).ToString() generates a new GUID, which is a   good choice for a secure password.
           #  - AsPlainText: input string is already in plain text (no need to decrypt)
+          #  - Convert plain text password to a secure string (simply convert string to secure string in .NET)
           $pfxPassword = ConvertTo-SecureString -String (New-Guid).ToString() -AsPlainText -Force
           $pfxPath = "$($env:TEMP)\$($certName).pfx"
           $fileToSign = "main.exe" # Assumes main.exe already exists from your compilation step
@@ -142,7 +138,7 @@ jobs:
           Write-Host "--- Step 1: Generating Self-Signed Certificate ---"
           Write-Host "Generating self-signed certificate: $certName"
           # 1. Generate the self-signed certificate
-          #  https://learn.microsoft.com/en-us/powershell/module/pki/new-selfsignedcertificate
+          #  https://learn.microsoft.com/powershell/module/pki/new-selfsignedcertificate
           # -CertStoreLocation Cert:\CurrentUser\My : Stores the certificate in the current user's certificate store
           # -Type CodeSigning : Specifies the certificate's purpose as code signing
           # -Subject "CN=$certName" : Sets the common name of the certificate
@@ -166,10 +162,12 @@ jobs:
 
           Write-Host "Certificate generated with thumbprint: $($cert.Thumbprint)"
 
-          Write-Host "Certificate details:"
+          Write-Host "--- Step 2: Certificate details:"
+          # Display certificate details
+          # https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-childitem
           Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert
 
-          Write-Host "Sign code with the generated certificate: $certName"
+          Write-Host "--- Step 3: Sign code with the generated certificate: $certName"
           $param = @{
               FilePath = $fileToSign
               Certificate = $cert  # Use the certificate object we just generated
@@ -177,102 +175,15 @@ jobs:
           Set-AuthenticodeSignature @param
 
 
-          # Write-Host "--- Step 2: Exporting Certificate to PFX File ---"
-          # # 2. Export the certificate with its private key to a PFX file
-          # #   https://learn.microsoft.com/en-us/powershell/module/pki/export-pfxcertificate
-          # # -FilePath $pfxPath : Path for the PFX file
-          # # -Password $pfxPassword : Password for the PFX file
-          # $param = @{
-          #     Cert = $cert
-          #     FilePath = $pfxPath
-          #     Password = $pfxPassword
-          # }
-          # Export-PfxCertificate @param
-
-          # Write-Host "PFX file exported to: $pfxPath"
-
-
-          # # --- NEW STEP: Import the self-signed certificate into the Trusted Root store ---
-          # Write-Host "--- Step 2.5: Importing self-signed cert to Trusted Root Certification Authorities (LocalMachine) ---"
-          # # This is necessary for the system to trust the self-signed certificate for verification.
-          # try {
-          #     # https://learn.microsoft.com/en-us/powershell/module/pki/import-certificate
-          #     # $cert | Import-Certificate -CertStoreLocation Cert:\LocalMachine\Root -ErrorAction Stop
-          #     Import-Certificate -Filepath $cert -CertStoreLocation Cert:\LocalMachine\Root
-          #     Write-Host "Certificate imported to LocalMachine\Root store."
-          # }
-          # catch {
-          #     Write-Error "Failed to import certificate to LocalMachine\Root: $($_.Exception.Message)"
-          #     exit 1 # Exit the workflow on import error
-          # }
-
-
-          # Write-Host "--- Step 3: Signing the File using Set-AuthenticodeSignature ---"
-          # Write-Host "Signing file '$fileToSign' using Set-AuthenticodeSignature..."
-          # try {
-          #     # Set-AuthenticodeSignature is used to sign the file with the generated certificate
-          #     # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-authenticodesignature
-
-          #     $param = @{
-          #     FilePath = $fileToSign
-          #     Certificate = $cert  # Use the certificate object we just generated
-          #     }
-          #     Set-AuthenticodeSignature @param
-
-          #     # Set-AuthenticodeSignature `
-          #     #     -FilePath "$fileToSign" `
-          #     #     -Certificate $cert  # Use the certificate object we just generated
-          #     #     # -HashAlgorithm SHA256 ` # File digest algorithm
-          #     #     # -TimestampServer "$timestampServer" ` # Timestamp server URL
-          #     #     # -ErrorAction Stop # Important: Stops the script on any signing error
-
-          #     Write-Host "File '$fileToSign' signed successfully using Set-AuthenticodeSignature."
-          # }
-          # catch {
-          #     Write-Error "Set-AuthenticodeSignature failed: $($_.Exception.Message)"
-          #     exit 1 # Exit the workflow on error
-          # }
-
-          # Write-Host "--- Step 4: Verifying the Signature using Get-AuthenticodeSignature ---"
-          # Write-Host "Verifying signature of file '$fileToSign'..."
-          # try {
-          #     $signature = Get-AuthenticodeSignature -FilePath "$fileToSign" -ErrorAction Stop
-
-          #     if ($signature.Status -eq 'Valid') {
-          #         Write-Host "Signature is VALID. Signed by: $($signature.SignerCertificate.Subject)"
-          #     } else {
-          #         Write-Error "Signature is INVALID. Status: $($signature.Status) - Error: $($signature.StatusMessage)"
-          #         exit 1 # Exit the workflow if signature is not valid
-          #     }
-          # }
-          # catch {
-          #     Write-Error "Get-AuthenticodeSignature failed during verification: $($_.Exception.Message)"
-          #     exit 1 # Exit the workflow on verification error
-          # }
-
-
-          # Write-Host "--- Step 5: Cleanup ---"
-          # Write-Host "Cleaning up generated certificate and PFX file..."
-          # Remove-Item $pfxPath -Force
-          # # Remove the certificate from the current user's store, including its private key
-          # Remove-Item "Cert:\CurrentUser\My\$($cert.Thumbprint)" -DeleteKey -Force
-          # # --- IMPORTANT: Remove the certificate from the Trusted Root store after completion! ---
-          # Write-Host "Removing certificate from LocalMachine\Root store..."
-          # try {
-          #     Remove-Item "Cert:\LocalMachine\Root\$($cert.Thumbprint)" -DeleteKey -Force -ErrorAction Stop
-          #     Write-Host "Certificate removed from LocalMachine\Root store."
-          # }
-          # catch {
-          #     Write-Error "Failed to remove certificate from LocalMachine\Root: $($_.Exception.Message)"
-          #     # We don't exit the workflow here, as it's just cleanup and the main part has already finished.
-          # }
-
-
           Write-Host "All operations completed successfully."
+
+      - name: List files in current directory
+        shell: cmd
+        run: dir
 
 
       - name: Upload signed executable as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: compiled-signed   # auto zip file
+          name: compiled-selfsigned   # copy main.exe to compiled-selfsigned.zip
           path: main.exe
