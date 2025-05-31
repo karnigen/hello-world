@@ -57,15 +57,23 @@ jobs:
 
           echo "-------------------------------------------------"
 
-          for key in secrets.MY_KEY1 secrets.MY_KEY2 secrets.MY_KEY3; do
-            # var_name="secrets.${key}"
-            if [[ -n "${{ !key }}" ]]; then
-              echo "$key is set"
-            else
-              echo "$key is not set"
-            fi
-          done
+          if [[ -n "${{ secrets.MY_KEY1 }}" ]]; then
+            echo "secrets.MY_KEY1 is set"
+          else
+            echo "secrets.MY_KEY1 is not set"
+          fi
 
+          if [[ -n "${{ secrets.MY_KEY2 }}" ]]; then
+            echo "secrets.MY_KEY2 is set"
+          else
+            echo "secrets.MY_KEY2 is not set"
+          fi
+
+          if [[ -n "${{ secrets.MY_KEY3 }}" ]]; then
+            echo "secrets.MY_KEY3 is set"
+          else
+            echo "secrets.MY_KEY3 is not set"
+          fi
 
           echo "-------------------------------------------------"
 
