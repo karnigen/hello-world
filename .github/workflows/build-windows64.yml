@@ -48,8 +48,6 @@ jobs:
           echo "-------------------------------------------------"
           echo "Signing policy..."
           echo secrets.GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          echo "Policy content:"
-          cat policy.txt
 
           echo "-------------------------------------------------"
 
