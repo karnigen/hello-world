@@ -63,6 +63,7 @@ jobs:
 
           echo "-------------------------------------------------"
           # inputs
+          echo "Inputs:"
           echo "tag_name: ${{ github.event.inputs.tag_name }}"  # ref: github.event.inputs.tag_name
 
 
