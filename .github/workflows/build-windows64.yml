@@ -28,12 +28,6 @@ on:
   #   branches: [___]   # EVENT_NAME=pull_request      REF_TYPE=branch   REF=refs/heads/branch_name  REF_NAME=branch_name
   #   tags: [build*]    # EVENT_NAME=pull_request      REF_TYPE=tag      REF=refs/tags/build*        REF_NAME=tag_name
   workflow_dispatch:    # EVENT_NAME=workflow_dispatch REF_TYPE=branch   REF=refs/heads/branch_name  REF_NAME=branch_name
-    inputs:
-      tag_name:                   # ref: github.event.inputs.build_type | inputs.build_type
-        description: 'create a release tag with this name'  # description of the input
-        required: false
-        default: 'dev-build'  # default value
-        type: string  # type of the input, can be number, boolean, string, choice or environment
 
 # sign policy before build
 #   push into branch     - create release dev-build-branch_name
@@ -43,11 +37,18 @@ on:
 jobs:
   sign_policy:
     runs-on: ubuntu-latest
+    outputs:
+      MY_SELF_SIGNED: ${{ steps.sign_vars.outputs.MY_SELF_SIGNED }}
+      MY_TAG_NAME: ${{ steps.sign_vars.outputs.MY_TAG_NAME }}
+      MY_PRERELEASE: ${{ steps.sign_vars.outputs.MY_PRERELEASE }}
+      MY_NAME: ${{ steps.sign_vars.outputs.MY_NAME }}
+    # if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Sign policy
+        id: sign_vars
         shell: bash
         run: |
 
@@ -64,7 +65,7 @@ jobs:
           echo "-------------------------------------------------"
           # inputs
           echo "Inputs:"
-          echo "tag_name: ${{ github.event.inputs.tag_name }}"  # ref: github.event.inputs.tag_name
+          # echo "tag_name: ${{ github.event.inputs.tag_name }}"  # ref: github.event.inputs.tag_name
 
 
           echo "-------------------------------------------------"
@@ -92,11 +93,17 @@ jobs:
             MY_NAME="development build of ${GITHUB_REF_NAME}"
           fi
 
-          echo "-------------------------------------------------"
+          echo "------------------------------------------------- echoing variables"
 
           echo "MY_TAG_NAME=${MY_TAG_NAME}"
           echo "MY_PRERELEASE=${MY_PRERELEASE}"
           echo "MY_NAME=${MY_NAME}"
+
+          echo "------------------------------------------------- Exporting variables to GITHUB_OUTPUT"
+          echo "MY_SELF_SIGNED=${MY_SELF_SIGNED}" >> $GITHUB_OUTPUT
+          echo "MY_TAG_NAME=${MY_TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "MY_PRERELEASE=${MY_PRERELEASE}" >> $GITHUB_OUTPUT
+          echo "MY_NAME=${MY_NAME}" >> $GITHUB_OUTPUT
 
           echo "-------------------------------------------------"
           env | sort | grep GITHUB_
@@ -105,6 +112,12 @@ jobs:
   build:
     needs: sign_policy
     runs-on: windows-latest
+
+    env:
+      MY_SELF_SIGNED: ${{ needs.sign_policy.outputs.MY_SELF_SIGNED }}  # not needed, use in sign step
+      MY_TAG_NAME: ${{ needs.sign_policy.outputs.MY_TAG_NAME }}
+      MY_PRERELEASE: ${{ needs.sign_policy.outputs.MY_PRERELEASE }}
+      MY_NAME: ${{ needs.sign_policy.outputs.MY_NAME }}
 
     steps:
       - name: Checkout repo
