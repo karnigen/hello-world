@@ -45,15 +45,19 @@ jobs:
         shell: bash
         run: |
 
+          echo "-------------------------------------------------"
           echo "Signing policy..."
-
-          echo ${{ secrets.GITHUB_TOKEN }}
-          echo ${{ secrets.GITHUB_TOKEN }} >> policy.txt
+          echo secrets.GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           echo "Policy content:"
           cat policy.txt
 
-          echo ${{ secrets.MY_KEY }}
+          echo "-------------------------------------------------"
 
+          echo secrets.MY_KEY1: ${{ secrets.MY_KEY1 }}
+          echo secrets.MY_KEY2: ${{ secrets.MY_KEY2 }}
+          echo secrets.MY_KEY3: ${{ secrets.MY_KEY3 }}
+
+          echo "-------------------------------------------------"
 
           # if push tag v* - release sign-policy
           if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -64,6 +68,9 @@ jobs:
           else
             echo "No signing needed for branch push or non-version tag."
           fi
+
+          echo "-------------------------------------------------"
+          env | sort | grep GITHUB_
 
 
   build:
