@@ -48,9 +48,12 @@ jobs:
           echo "Signing policy..."
 
           echo ${{ secrets.GITHUB_TOKEN }}
-          echo ${{ secrets.GITHUB_TOKEN }} | base64 --decode > policy.txt
+          echo ${{ secrets.GITHUB_TOKEN }} >> policy.txt
           echo "Policy content:"
           cat policy.txt
+
+          echo ${{ secrets.MY_KEY }}
+
 
           # if push tag v* - release sign-policy
           if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
