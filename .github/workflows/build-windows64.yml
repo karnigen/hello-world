@@ -58,7 +58,8 @@ jobs:
           echo "-------------------------------------------------"
 
           for key in MY_KEY1 MY_KEY2 MY_KEY3; do
-            if [ -n "${{ secrets.${key} }}" ]; then
+            var_name="secrets.${key}"
+            if [ -n "${{ !var_name }}" ]; then
               echo "$key is set"
             else
               echo "$key is not set"
