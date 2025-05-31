@@ -1,13 +1,53 @@
 name: Build Windows64
 
+# Inputs (some selected):
+#   GITHUB_EVENT_NAME - the name of the event that triggered the workflow (e.g., push, pull_request, workflow_dispatch, etc.)
+#   GITHUB_REF_TYPE - the type of ref that triggered the workflow (e.g., branch, tag)
+#   GITHUB_REF - what triggered the workflow (e.g., refs/heads/branch_name, refs/tags/v1.0.0, refs/)
+#   GITHUB_REF_NAME - the name of the branch or tag that triggered the workflow (e.g., branch_name, v1.0.0)
+#   GITHUB_SHA - the commit SHA that triggered the workflow
+#   GITHUB_WORKSPACE - the path to the repository on the runner . top level directory of the repository
+
+
 on:
   push:
-    tags: [build*]
-  workflow_dispatch:
+    branches: [___]     # REF=refs/heads/branch_name REF_TYPE=branch REF_NAME=branch_name  EVENT_NAME=push
+    tags:
+      - build*          # REF=refs/tags/build*       REF_TYPE=tag    REF_NAME=tag_name     EVENT_NAME=push
+      - v*.*.*          # REF=refs/tags/v*.*.*       REF_TYPE=tag    REF_NAME=tag_name     EVENT_NAME=push
+  # pull_request:
+  #   branches: [___]   # REF=refs/heads/branch_name REF_TYPE=branch REF_NAME=branch_name  EVENT_NAME=pull_request
+  #   tags: [build*]    # REF=refs/tags/build*       REF_TYPE=tag    REF_NAME=tag_name     EVENT_NAME=pull_request
+  workflow_dispatch:    # REF=refs/heads/branch_name REF_TYPE=branch REF_NAME=branch_name  EVENT_NAME=workflow_dispatch
 
+# sign policy before build
+#   push into branch     - create release dev-build-branch_name
+#   push into tag v*.*.* - create release tag_name
 
 jobs:
+  sign_policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Sign policy
+        shell: bash
+        run: |
+          echo "Signing policy..."
+          # if push tag v* - release sign-policy
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Signing policy for tag ${GITHUB_REF_NAME}..."
+            # Add your signing logic here, e.g., sign the policy file
+            # For example, you could use a command like:
+            # gpg --sign policy.txt
+          else
+            echo "No signing needed for branch push or non-version tag."
+          fi
+
+
   build:
+    needs: sign_policy
     runs-on: windows-latest
 
     steps:
@@ -105,7 +145,7 @@ jobs:
       - name: Upload unsigned executable as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: compiled-unsigned   # copy main.exe to compiled-unsigned.zip
+          name: compiled-unsigned   # copy main.exe to artifact/compiled-unsigned.zip
           path: main.exe
 
 
@@ -185,5 +225,5 @@ jobs:
       - name: Upload signed executable as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: compiled-selfsigned   # copy main.exe to compiled-selfsigned.zip
+          name: compiled-selfsigned   # copy main.exe to artifact/compiled-selfsigned.zip
           path: main.exe
