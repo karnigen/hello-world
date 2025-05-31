@@ -8,17 +8,20 @@ name: Build Windows64
 #   GITHUB_SHA - the commit SHA that triggered the workflow
 #   GITHUB_WORKSPACE - the path to the repository on the runner . top level directory of the repository
 
+# on:
+#   GITHUB_EVENT_NAME
+#     GITHUB_REF_TYPE
 
 on:
   push:
-    branches: [___]     # REF=refs/heads/branch_name REF_TYPE=branch REF_NAME=branch_name  EVENT_NAME=push
+    # branches: [___]   # EVENT_NAME=push              REF_TYPE=branch   REF=refs/heads/branch_name  REF_NAME=branch_name
     tags:
-      - build*          # REF=refs/tags/build*       REF_TYPE=tag    REF_NAME=tag_name     EVENT_NAME=push
-      - v*.*.*          # REF=refs/tags/v*.*.*       REF_TYPE=tag    REF_NAME=tag_name     EVENT_NAME=push
+      - build*          # EVENT_NAME=push              REF_TYPE=tag      REF=refs/tags/build*        REF_NAME=tag_name
+      - v*.*.*          # EVENT_NAME=push              REF_TYPE=tag      REF=refs/tags/v*.*.*        REF_NAME=tag_name
   # pull_request:
-  #   branches: [___]   # REF=refs/heads/branch_name REF_TYPE=branch REF_NAME=branch_name  EVENT_NAME=pull_request
-  #   tags: [build*]    # REF=refs/tags/build*       REF_TYPE=tag    REF_NAME=tag_name     EVENT_NAME=pull_request
-  workflow_dispatch:    # REF=refs/heads/branch_name REF_TYPE=branch REF_NAME=branch_name  EVENT_NAME=workflow_dispatch
+  #   branches: [___]   # EVENT_NAME=pull_request      REF_TYPE=branch   REF=refs/heads/branch_name  REF_NAME=branch_name
+  #   tags: [build*]    # EVENT_NAME=pull_request      REF_TYPE=tag      REF=refs/tags/build*        REF_NAME=tag_name
+  workflow_dispatch:    # EVENT_NAME=workflow_dispatch REF_TYPE=branch   REF=refs/heads/branch_name  REF_NAME=branch_name
 
 # sign policy before build
 #   push into branch     - create release dev-build-branch_name
