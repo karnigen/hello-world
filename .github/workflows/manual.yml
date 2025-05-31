@@ -7,12 +7,12 @@ name: Manual workflow
 on:
   push:
     # The branches that will trigger the workflow
-    branches:
-      - main
-      - master
+    # branches:
+    #   - main
+    #   - master
     tags:
       - v*
-      - build-*
+      - build*
 
   workflow_dispatch:
     # Inputs the workflow accepts.
