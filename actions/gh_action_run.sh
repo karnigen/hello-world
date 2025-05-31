@@ -4,8 +4,8 @@ set -e
 set -x
 
 # workflow
-#WF=build-windows64.yml
-WF=manual.yml
+WF=build-windows64.yml
+#WF=manual.yml
 
 # actual branch
 BR=$(git rev-parse --abbrev-ref HEAD)
