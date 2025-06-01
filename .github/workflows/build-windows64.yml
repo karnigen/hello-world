@@ -369,16 +369,6 @@ jobs:
             - Tag name: ${{ env.MY_TAG_NAME }}
             - Pre-release: ${{ env.MY_PRERELEASE }}
           files: |
-            artifacts/*.zip
+            artifacts/*
 
 
-        # env:
-        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # always set, used to create release
-
-      # - name: Upload artifacts to release
-      #   uses: softprops/action-gh-release@v1
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     files: |
-      #       compiled-unsigned.zip
-      #       compiled-selfsigned.zip
