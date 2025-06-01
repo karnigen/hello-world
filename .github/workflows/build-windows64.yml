@@ -370,6 +370,6 @@ jobs:
             - Pre-release: ${{ env.MY_PRERELEASE }}
           files: |
             artifacts/compiled-selfsigned/main.exe
-            # artifacts/compiled-unsigned/main.exe
+            # artifacts/compiled-unsigned/main.exe  # all files must have different names, we can't upload both
 
 
