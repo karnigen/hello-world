@@ -352,7 +352,7 @@ jobs:
         run: |
 
           echo "Listing files in artifacts directory:"
-          ls -l artifacts
+          ls -lR artifacts
 
       - name: Create release
         id: create_release
