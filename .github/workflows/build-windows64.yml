@@ -17,6 +17,7 @@ name: Build Windows64
 #   - A single tag can point to multiple branches, so there isn't a single matching branch for a tag.
 #   - deafult branch for workflow_dispatch is the default branch of the repository, which is usually 'main' or 'master'.
 #     - may be set gh workflow run -r <branch> <workflow_file>
+#   - variables ${{ xxx }} are parsed by YAML parser, before shell can see it ( eg ${{ $xxx }} is not what you expect).
 
 on:
   push:
@@ -38,22 +39,22 @@ jobs:
   sign_policy:
     runs-on: ubuntu-latest
     outputs:
-      MY_SELF_SIGNED: ${{ steps.sign_vars.outputs.MY_SELF_SIGNED }}
-      MY_TAG_NAME: ${{ steps.sign_vars.outputs.MY_TAG_NAME }}
-      MY_PRERELEASE: ${{ steps.sign_vars.outputs.MY_PRERELEASE }}
-      MY_NAME: ${{ steps.sign_vars.outputs.MY_NAME }}
+      MY_SELF_SIGNED: ${{ steps.set_vars.outputs.MY_SELF_SIGNED }}
+      MY_TAG_NAME: ${{ steps.set_vars.outputs.MY_TAG_NAME }}
+      MY_PRERELEASE: ${{ steps.set_vars.outputs.MY_PRERELEASE }}
+      MY_NAME: ${{ steps.set_vars.outputs.MY_NAME }}
     # if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Sign policy
-        id: sign_vars
+      - name: Set sign policy variables
+        id: set_vars
         shell: bash
         run: |
 
           echo "-------------------------------------------------"
-          echo "Signing policy..."
+          echo "Set signing policy variables ..."
           echo secrets.GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # print ***, always set
 
           echo "-------------------------------------------------"
@@ -75,7 +76,6 @@ jobs:
           else
             MY_SELF_SIGNED=true       # we use on the fly signed keys
           fi
-          echo "MY_SELF_SIGNED=${MY_SELF_SIGNED}"
 
           echo "-------------------------------------------------"
 
@@ -88,13 +88,20 @@ jobs:
             MY_PRERELEASE=false  # we are creating a release
             MY_NAME="${MY_TAG_NAME}"
           else
-            MY_TAG_NAME="dev-build-$(echo $GITHUB_REF_NAME | tr / -)"  # use branch name as tag
+            MY_TAG_NAME="dev-build-$(echo $GITHUB_REF_NAME | tr / -)"  # use branch/tag name as tag, replace / with -
             MY_PRERELEASE=true   # we are creating a pre-release
             MY_NAME="development build of ${GITHUB_REF_NAME}"
           fi
 
-          echo "------------------------------------------------- echoing variables"
+          # if Release doesn't have access to secrets exit with error
+          if [[ "${MY_PRERELEASE}" == "false" && "${MY_SELF_SIGNED}" == "false" ]]; then
+            echo "Error: Cannot create a release without access to secrets."
+            exit 1
+          fi
 
+
+          echo "------------------------------------------------- echoing variables"
+          echo "MY_SELF_SIGNED=${MY_SELF_SIGNED}"
           echo "MY_TAG_NAME=${MY_TAG_NAME}"
           echo "MY_PRERELEASE=${MY_PRERELEASE}"
           echo "MY_NAME=${MY_NAME}"
@@ -109,12 +116,13 @@ jobs:
           env | sort | grep GITHUB_
 
 
+  # ---------------------------------------------------------------------------------------------------
   build:
     needs: sign_policy
     runs-on: windows-latest
 
     env:
-      MY_SELF_SIGNED: ${{ needs.sign_policy.outputs.MY_SELF_SIGNED }}  # not needed, use in sign step
+      MY_SELF_SIGNED: ${{ needs.sign_policy.outputs.MY_SELF_SIGNED }}
       MY_TAG_NAME: ${{ needs.sign_policy.outputs.MY_TAG_NAME }}
       MY_PRERELEASE: ${{ needs.sign_policy.outputs.MY_PRERELEASE }}
       MY_NAME: ${{ needs.sign_policy.outputs.MY_NAME }}
@@ -294,5 +302,5 @@ jobs:
       - name: Upload signed executable as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: compiled-selfsigned   # copy main.exe to artifact/compiled-selfsigned.zip
+          name: signed/compiled-selfsigned   # copy main.exe to artifact/compiled-selfsigned.zip
           path: main.exe
