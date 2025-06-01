@@ -30,10 +30,10 @@ on:
   #   tags: [build*]    # EVENT_NAME=pull_request      REF_TYPE=tag      REF=refs/tags/build*        REF_NAME=tag_name
   workflow_dispatch:    # EVENT_NAME=workflow_dispatch REF_TYPE=branch   REF=refs/heads/branch_name  REF_NAME=branch_name
 
-# sign policy before build
+# sign policy
 #   push into branch     - create release dev-build-branch_name
-#   push into tag v*.*.* - create release tag_name, signed, if secrets are not available dev-build-tag_name
-#                 build* - create release dev-build-tag_name, self signed
+#   push into tag v*.*.* - create release tag_name, signed, if secrets are not available exit 1 (or dev-build-tag_name?)
+#                 build* - create release dev-build-tag_name, signed  or self signed
 
 jobs:
   sign_policy:
@@ -278,7 +278,7 @@ jobs:
               Subject = "CN=$certName"
               KeyAlgorithm = 'RSA'
               KeyLength = 2048
-              NotAfter = (Get-Date).AddDays(7)
+              NotAfter = (Get-Date).AddDays(7)  # valid for 7 days
               KeyUsage = 'DigitalSignature'
               HashAlgorithm = 'SHA256'
           }
@@ -354,17 +354,26 @@ jobs:
           echo "Listing files in artifacts directory:"
           ls -l artifacts
 
-      # - name: Create release
-      #   id: create_release
-      #   uses: softprops/action-gh-release@v1
-      #   with:
-      #     tag_name: ${{ env.MY_TAG_NAME }}
-      #     name: ${{ env.MY_NAME }}
-      #     prerelease: ${{ env.MY_PRERELEASE }}
-      #     draft: false
-      #     token: ${{ secrets.GITHUB_TOKEN }}  # always set, used to create release
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # always set, used to create release
+      - name: Create release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          # token: ${{ secrets.GITHUB_TOKEN }}  # always set, used to create release
+          tag_name: ${{ env.MY_TAG_NAME }}
+          name: ${{ env.MY_NAME }}
+          prerelease: ${{ env.MY_PRERELEASE }}
+          draft: false
+          body: |
+            This is a release for ${{ env.MY_NAME }}.
+            - Self-signed: ${{ env.MY_SELF_SIGNED }}
+            - Tag name: ${{ env.MY_TAG_NAME }}
+            - Pre-release: ${{ env.MY_PRERELEASE }}
+          files: |
+            artifacts/*.zip
+
+
+        # env:
+        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # always set, used to create release
 
       # - name: Upload artifacts to release
       #   uses: softprops/action-gh-release@v1
