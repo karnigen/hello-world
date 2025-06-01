@@ -369,6 +369,6 @@ jobs:
             - Tag name: ${{ env.MY_TAG_NAME }}
             - Pre-release: ${{ env.MY_PRERELEASE }}
           files: |
-            artifacts/*
+            artifacts/**/*
 
 
