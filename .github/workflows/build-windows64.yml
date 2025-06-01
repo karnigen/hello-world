@@ -369,6 +369,7 @@ jobs:
             - Tag name: ${{ env.MY_TAG_NAME }}
             - Pre-release: ${{ env.MY_PRERELEASE }}
           files: |
-            artifacts/compiled-unsigned/main.exe
+            artifacts/compiled-selfsigned/main.exe
+            # artifacts/compiled-unsigned/main.exe
 
 
