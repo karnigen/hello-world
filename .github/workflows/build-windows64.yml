@@ -229,9 +229,9 @@ jobs:
         run: dir
 
       - name: Upload unsigned executable as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4   # https://github.com/actions/upload-artifact
         with:
-          name: compiled-unsigned   # copy main.exe to artifact/compiled-unsigned.zip
+          name: compiled-unsigned   # where to copy - unique through workflow
           path: main.exe
 
 
@@ -294,12 +294,19 @@ jobs:
           Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert
 
           Write-Host "--- Step 3: Sign code with the generated certificate: $certName"
+          # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-authenticodesignature
           $param = @{
               FilePath = $fileToSign
               Certificate = $cert  # Use the certificate object we just generated
           }
           Set-AuthenticodeSignature @param
 
+
+          # Rename main.exe to main-signed.exe
+          Write-Host "--- Step 4: Renaming signed file to main-signed.exe"
+          $signedFileName = "main-signed.exe"
+          Rename-Item -Path $fileToSign -NewName $signedFileName
+          Write-Host "Signed file renamed to: $signedFileName"
 
           Write-Host "All operations completed successfully."
 
@@ -309,11 +316,11 @@ jobs:
 
 
       - name: Upload signed executable as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4  # https://github.com/actions/upload-artifact
         with:
-          # copy main.exe to artifact/compiled-selfsigned.zip, no special characters in name !!!
+          # copy main-signed.exe to artifact, no special characters in name !!!
           name: compiled-selfsigned
-          path: main.exe
+          path: main-signed.exe
 
 
   release:
@@ -347,12 +354,14 @@ jobs:
         #   name: .. # default is all artifacts
           path: artifacts  # download to artifacts directory
 
+
       - name: List files in artifacts directory
         shell: bash
         run: |
 
           echo "Listing files in artifacts directory:"
           ls -lR artifacts
+
 
       - name: Create release
         id: create_release
@@ -369,7 +378,8 @@ jobs:
             - Tag name: ${{ env.MY_TAG_NAME }}
             - Pre-release: ${{ env.MY_PRERELEASE }}
           files: |
-            artifacts/compiled-selfsigned/main.exe
-            # artifacts/compiled-unsigned/main.exe  # all files must have different names, we can't upload both
+            artifacts/**/*
+          #   artifacts/compiled-selfsigned/main.exe
+          #   # artifacts/compiled-unsigned/main.exe  # all files must have different names, we can't upload both
 
 
