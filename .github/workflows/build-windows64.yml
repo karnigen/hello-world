@@ -83,7 +83,7 @@ jobs:
 
           # *** release requires tag name
           # if push tag vX.X.X - release sign-policy, not v.X.X.X.alpha-xxx ...
-          if [[ "${EVENT_NAME}" == "push" && \
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && \
                 "${GITHUB_REF_TYPE}" == "tag" && \
                 "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.* ]]; then
             MY_TAG_NAME="${GITHUB_REF_NAME}"
