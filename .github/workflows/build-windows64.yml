@@ -95,12 +95,11 @@ jobs:
             MY_NAME="development build of ${GITHUB_REF_NAME}"
           fi
 
-          # if Release doesn't have access to secrets exit with error
-          if [[ "${MY_PRERELEASE}" == "false" && "${MY_SELF_SIGNED}" == "false" ]]; then
+          # For Release (MY_PRERELEASE==false) we need access to secrets, if not (MY_SELF_SIGNED==true) exit with error
+          if [[ "${MY_PRERELEASE}" == "false" && "${MY_SELF_SIGNED}" == "true" ]]; then
             echo "Error: Cannot create a release without access to secrets."
             exit 1
           fi
-
 
           echo "------------------------------------------------- echoing variables"
           echo "MY_SELF_SIGNED=${MY_SELF_SIGNED}"
