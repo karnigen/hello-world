@@ -74,7 +74,7 @@ jobs:
           echo "-------------------------------------------------"
           # Check if secrets are available
           if [[ -n "${{ secrets.MY_KEY1 }}" ]]; then
-            MY_SELF_SIGNED=false      # we have access to secrets
+            MY_SELF_SIGNED=false      # we have access to secrets, assume all signing keys are available
           else
             MY_SELF_SIGNED=true       # we use on the fly signed keys
           fi
@@ -92,7 +92,7 @@ jobs:
           else
             MY_TAG_NAME="dev-build-$(echo $GITHUB_REF_NAME | tr / -)"  # use branch/tag name as tag, replace / with -
             MY_PRERELEASE=true   # we are creating a pre-release
-            MY_NAME="development build of ${GITHUB_REF_NAME}"
+            MY_NAME="${MY_TAG_NAME}"
           fi
 
           # For Release (MY_PRERELEASE==false) we need access to secrets, if not (MY_SELF_SIGNED==true) exit with error
