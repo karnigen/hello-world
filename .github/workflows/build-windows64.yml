@@ -59,6 +59,8 @@ jobs:
 
           echo "-------------------------------------------------"
 
+          # this is just for testing, not needed in real workflow
+          echo "Testing secrets:"
           echo secrets.MY_KEY1: ${{ secrets.MY_KEY1 }}  # is set
           echo secrets.MY_KEY2: ${{ secrets.MY_KEY2 }}  # is " " one space, empty string can't be set in GitHub secrets
           echo secrets.MY_KEY3: ${{ secrets.MY_KEY3 }}  # is not set
